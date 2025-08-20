@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Herní Arkáda</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Silkscreen&family=Bungee&display=swap" rel="stylesheet">
+    <style>
+        /* Custom fonts for games */
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden; /* Hide scrollbars */
+        }
+        .font-press-start { font-family: 'Press Start 2P', cursive; }
+        .font-vt323 { font-family: 'VT323', monospace; }
+        .font-silkscreen { font-family: 'Silkscreen', cursive; }
+        .font-bungee { font-family: 'Bungee', cursive; }
+
+        /* Game window styles */
+        .game-window {
+            aspect-ratio: 4 / 3;
+            transition: all 0.3s ease-in-out;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            border: 4px solid #1f2937;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2), 0 4px 6px -2px rgba(0,0,0,0.1);
+        }
+        .game-window h2 {
+            transition: opacity 0.3s ease;
+        }
+        .game-window canvas {
+            display: none; /* Canvases are hidden by default */
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+        }
+        .game-window.active h2 {
+            display: none;
+        }
+        .game-window.active canvas {
+            display: block;
+        }
+        
+        /* Thematic backgrounds */
+        #snake-window { background-color: #a3e635; } /* Lime green */
+        #pong-window { background-color: #60a5fa; } /* Sky blue */
+        #breakout-window { background-color: #facc15; } /* Amber yellow */
+        #dino-window { background-color: #d1d5db; } /* Cool gray */
+
+        /* Prevent text selection */
+        .noselect {
+            -webkit-touch-callout: none; /* iOS Safari */
+            -webkit-user-select: none; /* Safari, Chrome, Opera, Edge */
+            -khtml-user-select: none; /* Konqueror HTML */
+            -moz-user-select: none; /* Old versions of Firefox */
+            -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently supported by Chrome, Opera and Firefox */
+        }
+    </style>
+</head>
+<body class="bg-gray-800 text-white p-4 sm:p-8 flex flex-col h-screen noselect">
+    <header class="text-center mb-4 sm:mb-8">
+        <h1 class="text-4xl md:text-6xl font-bungee tracking-wider">Retro Herní Arkáda</h1>
+        <p class="text-gray-400 mt-2 font-vt323 text-xl">Klikni na hru pro spuštění / pauzu</p>
+    </header>
+
+    <main class="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
+        <!-- Snake Game -->
+        <div id="snake-window" class="game-window" data-game="snake">
+            <h2 class="text-4xl md:text-5xl font-press-start text-gray-900">SNAKE</h2>
+            <canvas id="snake-canvas"></canvas>
+        </div>
+
+        <!-- Pong Game -->
+        <div id="pong-window" class="game-window" data-game="pong">
+            <h2 class="text-4xl md:text-5xl font-silkscreen text-gray-900">PONG</h2>
+            <canvas id="pong-canvas"></canvas>
+        </div>
+
+        <!-- Breakout Game -->
+        <div id="breakout-window" class="game-window" data-game="breakout">
+            <h2 class="text-4xl md:text-5xl font-bungee text-gray-900">BREAKOUT</h2>
+            <canvas id="breakout-canvas"></canvas>
+        </div>
+        
+        <!-- Dino Run Game -->
+        <div id="dino-window" class="game-window" data-game="dino">
+            <h2 class="text-4xl md:text-5xl font-vt323 text-gray-900">DINO RUN</h2>
+            <canvas id="dino-canvas"></canvas>
+        </div>
+    </main>
+
+    <script>
+        // --- GLOBAL GAME CONTROLLER ---
+        let activeGame = null;
+        const gameInstances = {};
+
+        // --- GAME IMPLEMENTATIONS ---
+
+        // --- SNAKE ---
+        gameInstances.snake = {
+            canvas: document.getElementById('snake-canvas'),
+            ctx: null,
+            tileSize: 20,
+            snake: [],
+            food: {},
+            direction: 'right',
+            newDirection: 'right',
+            score: 0,
+            gameOver: false,
+            paused: false,
+            loop: null,
+            init() {
+                this.ctx = this.canvas.getContext('2d');
+                this.canvas.width = this.canvas.offsetWidth;
+                this.canvas.height = this.canvas.offsetHeight;
+                this.tileSize = Math.floor(this.canvas.width / 25);
+                this.reset();
+                window.addEventListener('keydown', this.handleInput.bind(this));
+            },
+            reset() {
+                this.snake = [{ x: 10, y: 10 }];
+                this.direction = 'right';
+                this.newDirection = 'right';
+                this.score = 0;
+                this.gameOver = false;
+                this.placeFood();
+            },
+            placeFood() {
+                const cols = Math.floor(this.canvas.width / this.tileSize);
+                const rows = Math.floor(this.canvas.height / this.tileSize);
+                this.food = {
+                    x: Math.floor(Math.random() * cols),
+                    y: Math.floor(Math.random() * rows)
+                };
+            },
+            handleInput(e) {
+                if (activeGame !== 'snake' || this.paused) return;
+                if (e.key === 'ArrowUp' && this.direction !== 'down') this.newDirection = 'up';
+                else if (e.key === 'ArrowDown' && this.direction !== 'up') this.newDirection = 'down';
+                else if (e.key === 'ArrowLeft' && this.direction !== 'right') this.newDirection = 'left';
+                else if (e.key === 'ArrowRight' && this.direction !== 'left') this.newDirection = 'right';
+            },
+            update() {
+                if (this.gameOver || this.paused) return;
+
+                this.direction = this.newDirection;
+                const head = { ...this.snake[0] };
+
+                if (this.direction === 'right') head.x++;
+                if (this.direction === 'left') head.x--;
+                if (this.direction === 'up') head.y--;
+                if (this.direction === 'down') head.y++;
+
+                const cols = Math.floor(this.canvas.width / this.tileSize);
+                const rows = Math.floor(this.canvas.height / this.tileSize);
+
+                // Wall collision
+                if (head.x < 0 || head.x >= cols || head.y < 0 || head.y >= rows) {
+                    this.gameOver = true;
+                    return;
+                }
+                // Self collision
+                for (let i = 1; i < this.snake.length; i++) {
+                    if (head.x === this.snake[i].x && head.y === this.snake[i].y) {
+                        this.gameOver = true;
+                        return;
+                    }
+                }
+
+                this.snake.unshift(head);
+
+                // Food collision
+                if (head.x === this.food.x && head.y === this.food.y) {
+                    this.score++;
+                    this.placeFood();
+                } else {
+                    this.snake.pop();
+                }
+            },
+            draw() {
+                this.ctx.fillStyle = '#1a2e05'; // Dark green background
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Draw snake
+                this.ctx.fillStyle = '#84cc16'; // Bright green
+                this.snake.forEach(segment => {
+                    this.ctx.fillRect(segment.x * this.tileSize, segment.y * this.tileSize, this.tileSize - 1, this.tileSize - 1);
+                });
+
+                // Draw food
+                this.ctx.fillStyle = '#ef4444'; // Red
+                this.ctx.fillRect(this.food.x * this.tileSize, this.food.y * this.tileSize, this.tileSize, this.tileSize);
+
+                // Draw score
+                this.ctx.fillStyle = 'white';
+                this.ctx.font = `${this.tileSize * 1.5}px "Press Start 2P"`;
+                this.ctx.fillText(`Score: ${this.score}`, this.tileSize, this.tileSize * 2);
+
+                if (this.gameOver) {
+                    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                    this.ctx.fillStyle = 'white';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2);
+                }
+            },
+            gameLoop() {
+                this.update();
+                this.draw();
+                this.loop = requestAnimationFrame(this.gameLoop.bind(this));
+            },
+            start() { 
+                this.reset();
+                this.paused = false;
+                this.gameLoop();
+            },
+            stop() { 
+                cancelAnimationFrame(this.loop);
+                this.paused = true;
+            },
+            togglePause() {
+                this.paused = !this.paused;
+                if (this.gameOver) this.reset();
+            }
+        };
+
+        // --- PONG ---
+        gameInstances.pong = {
+            canvas: document.getElementById('pong-canvas'),
+            ctx: null,
+            ball: {},
+            player: {},
+            ai: {},
+            paused: false,
+            loop: null,
+            init() {
+                this.ctx = this.canvas.getContext('2d');
+                this.canvas.width = this.canvas.offsetWidth;
+                this.canvas.height = this.canvas.offsetHeight;
+                this.reset();
+                window.addEventListener('keydown', this.handleInput.bind(this));
+            },
+            reset() {
+                this.paddleWidth = 10;
+                this.paddleHeight = this.canvas.height / 6;
+                this.ballSize = 10;
+                
+                this.ball = {
+                    x: this.canvas.width / 2,
+                    y: this.canvas.height / 2,
+                    dx: 5,
+                    dy: 5,
+                    size: this.ballSize
+                };
+                this.player = {
+                    x: 10,
+                    y: this.canvas.height / 2 - this.paddleHeight / 2,
+                    width: this.paddleWidth,
+                    height: this.paddleHeight,
+                    score: 0,
+                    speed: 8
+                };
+                this.ai = {
+                    x: this.canvas.width - 20,
+                    y: this.canvas.height / 2 - this.paddleHeight / 2,
+                    width: this.paddleWidth,
+                    height: this.paddleHeight,
+                    score: 0,
+                    speed: 4
+                };
+            },
+             handleInput(e) {
+                if (activeGame !== 'pong' || this.paused) return;
+                if (e.key === 'ArrowUp') {
+                    this.player.y -= this.player.speed * 2;
+                } else if (e.key === 'ArrowDown') {
+                    this.player.y += this.player.speed * 2;
+                }
+                // Clamp paddle position
+                if (this.player.y < 0) this.player.y = 0;
+                if (this.player.y + this.player.height > this.canvas.height) {
+                    this.player.y = this.canvas.height - this.player.height;
+                }
+            },
+            update() {
+                if (this.paused) return;
+
+                // Move ball
+                this.ball.x += this.ball.dx;
+                this.ball.y += this.ball.dy;
+
+                // Wall collision (top/bottom)
+                if (this.ball.y + this.ball.size > this.canvas.height || this.ball.y - this.ball.size < 0) {
+                    this.ball.dy *= -1;
+                }
+
+                // Paddle collision
+                // Player
+                if (this.ball.x - this.ball.size < this.player.x + this.player.width &&
+                    this.ball.y > this.player.y && this.ball.y < this.player.y + this.player.height) {
+                    this.ball.dx *= -1.1; // Speed up
+                }
+                // AI
+                if (this.ball.x + this.ball.size > this.ai.x &&
+                    this.ball.y > this.ai.y && this.ball.y < this.ai.y + this.ai.height) {
+                    this.ball.dx *= -1.1; // Speed up
+                }
+
+                // Score
+                if (this.ball.x - this.ball.size < 0) {
+                    this.ai.score++;
+                    this.resetBall();
+                }
+                if (this.ball.x + this.ball.size > this.canvas.width) {
+                    this.player.score++;
+                    this.resetBall();
+                }
+
+                // AI movement
+                const aiCenter = this.ai.y + this.ai.height / 2;
+                if (aiCenter < this.ball.y - 35) {
+                    this.ai.y += this.ai.speed;
+                } else if (aiCenter > this.ball.y + 35) {
+                    this.ai.y -= this.ai.speed;
+                }
+                 if (this.ai.y < 0) this.ai.y = 0;
+                if (this.ai.y + this.ai.height > this.canvas.height) {
+                    this.ai.y = this.canvas.height - this.ai.height;
+                }
+            },
+            resetBall() {
+                this.ball.x = this.canvas.width / 2;
+                this.ball.y = this.canvas.height / 2;
+                this.ball.dx = (Math.random() > 0.5 ? 1 : -1) * 5;
+                this.ball.dy = (Math.random() > 0.5 ? 1 : -1) * 5;
+            },
+            draw() {
+                // Background
+                this.ctx.fillStyle = '#0f172a'; // Dark blue
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Center line
+                this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                this.ctx.lineWidth = 4;
+                this.ctx.setLineDash([10, 10]);
+                this.ctx.beginPath();
+                this.ctx.moveTo(this.canvas.width / 2, 0);
+                this.ctx.lineTo(this.canvas.width / 2, this.canvas.height);
+                this.ctx.stroke();
+                this.ctx.setLineDash([]);
+
+                // Ball
+                this.ctx.fillStyle = 'white';
+                this.ctx.beginPath();
+                this.ctx.arc(this.ball.x, this.ball.y, this.ball.size, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                // Paddles
+                this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
+                this.ctx.fillRect(this.ai.x, this.ai.y, this.ai.width, this.ai.height);
+
+                // Score
+                this.ctx.font = `${this.canvas.width / 10}px "Silkscreen"`;
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText(this.player.score, this.canvas.width / 4, this.canvas.height / 5);
+                this.ctx.fillText(this.ai.score, this.canvas.width * 3 / 4, this.canvas.height / 5);
+            },
+            gameLoop() {
+                this.update();
+                this.draw();
+                this.loop = requestAnimationFrame(this.gameLoop.bind(this));
+            },
+            start() { 
+                this.reset();
+                this.paused = false;
+                this.gameLoop();
+            },
+            stop() { 
+                cancelAnimationFrame(this.loop);
+                this.paused = true;
+            },
+            togglePause() {
+                this.paused = !this.paused;
+            }
+        };
+
+        // --- BREAKOUT ---
+        gameInstances.breakout = {
+            canvas: document.getElementById('breakout-canvas'),
+            ctx: null,
+            ball: {},
+            paddle: {},
+            bricks: [],
+            brickRowCount: 5,
+            brickColumnCount: 8,
+            paused: false,
+            gameOver: false,
+            loop: null,
+            init() {
+                this.ctx = this.canvas.getContext('2d');
+                this.canvas.width = this.canvas.offsetWidth;
+                this.canvas.height = this.canvas.offsetHeight;
+                this.reset();
+                window.addEventListener('keydown', this.handleInput.bind(this));
+            },
+            reset() {
+                this.ball = { x: this.canvas.width / 2, y: this.canvas.height - 50, dx: 4, dy: -4, radius: 8 };
+                this.paddle = { x: this.canvas.width / 2 - 50, y: this.canvas.height - 20, width: 100, height: 10, speed: 10 };
+                this.createBricks();
+                this.gameOver = false;
+            },
+            createBricks() {
+                this.bricks = [];
+                const brickWidth = this.canvas.width / (this.brickColumnCount + 1);
+                const brickHeight = 20;
+                const brickPadding = 5;
+                const brickOffsetTop = 30;
+                const brickOffsetLeft = (this.canvas.width - (this.brickColumnCount * (brickWidth + brickPadding))) / 2;
+                const colors = ['#dc2626', '#f97316', '#f59e0b', '#84cc16', '#22c55e'];
+
+                for (let c = 0; c < this.brickColumnCount; c++) {
+                    this.bricks[c] = [];
+                    for (let r = 0; r < this.brickRowCount; r++) {
+                        this.bricks[c][r] = { 
+                            x: c * (brickWidth + brickPadding) + brickOffsetLeft, 
+                            y: r * (brickHeight + brickPadding) + brickOffsetTop, 
+                            width: brickWidth, 
+                            height: brickHeight, 
+                            status: 1,
+                            color: colors[r % colors.length]
+                        };
+                    }
+                }
+            },
+            handleInput(e) {
+                if (activeGame !== 'breakout' || this.paused) return;
+                if (e.key === 'ArrowLeft') {
+                    this.paddle.x -= this.paddle.speed * 2;
+                } else if (e.key === 'ArrowRight') {
+                    this.paddle.x += this.paddle.speed * 2;
+                }
+                if (this.paddle.x < 0) this.paddle.x = 0;
+                if (this.paddle.x + this.paddle.width > this.canvas.width) {
+                    this.paddle.x = this.canvas.width - this.paddle.width;
+                }
+            },
+            collisionDetection() {
+                for (let c = 0; c < this.brickColumnCount; c++) {
+                    for (let r = 0; r < this.brickRowCount; r++) {
+                        const b = this.bricks[c][r];
+                        if (b.status === 1) {
+                            if (this.ball.x > b.x && this.ball.x < b.x + b.width && this.ball.y > b.y && this.ball.y < b.y + b.height) {
+                                this.ball.dy = -this.ball.dy;
+                                b.status = 0;
+                            }
+                        }
+                    }
+                }
+            },
+            update() {
+                if (this.paused || this.gameOver) return;
+
+                this.ball.x += this.ball.dx;
+                this.ball.y += this.ball.dy;
+
+                // Wall collision
+                if (this.ball.x + this.ball.radius > this.canvas.width || this.ball.x - this.ball.radius < 0) {
+                    this.ball.dx = -this.ball.dx;
+                }
+                if (this.ball.y - this.ball.radius < 0) {
+                    this.ball.dy = -this.ball.dy;
+                } else if (this.ball.y + this.ball.radius > this.canvas.height) {
+                    // Paddle collision
+                    if (this.ball.x > this.paddle.x && this.ball.x < this.paddle.x + this.paddle.width) {
+                        this.ball.dy = -this.ball.dy;
+                    } else {
+                        this.gameOver = true;
+                    }
+                }
+
+                this.collisionDetection();
+            },
+            draw() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.fillStyle = '#1e293b'; // Dark slate
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Bricks
+                this.bricks.forEach(column => {
+                    column.forEach(brick => {
+                        if (brick.status === 1) {
+                            this.ctx.fillStyle = brick.color;
+                            this.ctx.fillRect(brick.x, brick.y, brick.width, brick.height);
+                        }
+                    });
+                });
+
+                // Ball
+                this.ctx.beginPath();
+                this.ctx.arc(this.ball.x, this.ball.y, this.ball.radius, 0, Math.PI * 2);
+                this.ctx.fillStyle = '#fff';
+                this.ctx.fill();
+                this.ctx.closePath();
+
+                // Paddle
+                this.ctx.fillStyle = '#94a3b8'; // Light slate
+                this.ctx.fillRect(this.paddle.x, this.paddle.y, this.paddle.width, this.paddle.height);
+
+                if (this.gameOver) {
+                    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                    this.ctx.fillStyle = 'white';
+                    this.ctx.font = '32px "Bungee"';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2);
+                }
+            },
+            gameLoop() {
+                this.update();
+                this.draw();
+                this.loop = requestAnimationFrame(this.gameLoop.bind(this));
+            },
+            start() { 
+                this.reset();
+                this.paused = false;
+                this.gameLoop();
+            },
+            stop() { 
+                cancelAnimationFrame(this.loop);
+                this.paused = true;
+            },
+            togglePause() {
+                this.paused = !this.paused;
+                if (this.gameOver) this.reset();
+            }
+        };
+
+        // --- DINO RUN ---
+        gameInstances.dino = {
+            canvas: document.getElementById('dino-canvas'),
+            ctx: null,
+            dino: {},
+            obstacles: [],
+            gravity: 0.8,
+            gameSpeed: 5,
+            score: 0,
+            frameCount: 0,
+            paused: false,
+            gameOver: false,
+            loop: null,
+            init() {
+                this.ctx = this.canvas.getContext('2d');
+                this.canvas.width = this.canvas.offsetWidth;
+                this.canvas.height = this.canvas.offsetHeight;
+                this.reset();
+                window.addEventListener('keydown', this.handleInput.bind(this));
+            },
+            reset() {
+                this.dino = {
+                    x: 50,
+                    y: this.canvas.height - 50,
+                    width: 40,
+                    height: 50,
+                    dy: 0,
+                    jumpPower: 15,
+                    grounded: true
+                };
+                this.obstacles = [];
+                this.score = 0;
+                this.gameSpeed = 5;
+                this.gameOver = false;
+                this.frameCount = 0;
+            },
+            handleInput(e) {
+                if (activeGame !== 'dino' || this.paused) return;
+                if ((e.key === ' ' || e.key === 'ArrowUp') && this.dino.grounded) {
+                    this.dino.dy = -this.dino.jumpPower;
+                    this.dino.grounded = false;
+                }
+            },
+            update() {
+                if (this.paused || this.gameOver) return;
+                
+                this.frameCount++;
+                this.score++;
+
+                // Dino physics
+                this.dino.dy += this.gravity;
+                this.dino.y += this.dino.dy;
+
+                // Ground collision
+                if (this.dino.y + this.dino.height > this.canvas.height - 20) {
+                    this.dino.y = this.canvas.height - 20 - this.dino.height;
+                    this.dino.dy = 0;
+                    this.dino.grounded = true;
+                }
+                
+                // Spawn obstacles
+                if (this.frameCount % Math.max(80 - Math.floor(this.gameSpeed), 40) === 0) {
+                    const height = Math.random() * 30 + 20;
+                    this.obstacles.push({
+                        x: this.canvas.width,
+                        y: this.canvas.height - 20 - height,
+                        width: 20,
+                        height: height
+                    });
+                }
+
+                // Move and check obstacles
+                for (let i = this.obstacles.length - 1; i >= 0; i--) {
+                    const obs = this.obstacles[i];
+                    obs.x -= this.gameSpeed;
+
+                    // Collision with dino
+                    if (this.dino.x < obs.x + obs.width &&
+                        this.dino.x + this.dino.width > obs.x &&
+                        this.dino.y < obs.y + obs.height &&
+                        this.dino.y + this.dino.height > obs.y) {
+                        this.gameOver = true;
+                    }
+
+                    if (obs.x + obs.width < 0) {
+                        this.obstacles.splice(i, 1);
+                    }
+                }
+                
+                this.gameSpeed += 0.003;
+
+            },
+            draw() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.fillStyle = '#f3f4f6'; // Very light gray background
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Ground
+                this.ctx.fillStyle = '#4b5563'; // Gray
+                this.ctx.fillRect(0, this.canvas.height - 20, this.canvas.width, 20);
+
+                // Dino
+                this.ctx.fillStyle = '#4b5563'; // Gray
+                this.ctx.fillRect(this.dino.x, this.dino.y, this.dino.width, this.dino.height);
+
+                // Obstacles
+                this.obstacles.forEach(obs => {
+                    this.ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+                });
+
+                // Score
+                this.ctx.fillStyle = '#4b5563';
+                this.ctx.font = '24px "VT323"';
+                this.ctx.textAlign = 'right';
+                this.ctx.fillText(`SCORE: ${Math.floor(this.score/5)}`, this.canvas.width - 20, 30);
+
+                if (this.gameOver) {
+                    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                    this.ctx.fillStyle = '#f3f4f6';
+                    this.ctx.font = '32px "VT323"';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2);
+                }
+            },
+            gameLoop() {
+                this.update();
+                this.draw();
+                this.loop = requestAnimationFrame(this.gameLoop.bind(this));
+            },
+            start() { 
+                this.reset();
+                this.paused = false;
+                this.gameLoop();
+            },
+            stop() { 
+                cancelAnimationFrame(this.loop);
+                this.paused = true;
+            },
+            togglePause() {
+                this.paused = !this.paused;
+                if (this.gameOver) this.reset();
+            }
+        };
+
+        // --- MAIN EVENT LISTENER ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameWindows = document.querySelectorAll('.game-window');
+
+            // Initialize all games
+            Object.values(gameInstances).forEach(game => game.init());
+
+            gameWindows.forEach(win => {
+                win.addEventListener('click', () => {
+                    const gameName = win.dataset.game;
+                    const game = gameInstances[gameName];
+
+                    // Case 1: Clicking the currently active game to pause/resume
+                    if (gameName === activeGame) {
+                        game.togglePause();
+                        // Optional: Add a visual pause indicator
+                        return;
+                    }
+
+                    // Case 2: Clicking a new game
+                    // Stop the previous game if there was one
+                    if (activeGame && gameInstances[activeGame]) {
+                        gameInstances[activeGame].stop();
+                        document.querySelector(`[data-game="${activeGame}"]`).classList.remove('active');
+                    }
+
+                    // Start the new game
+                    activeGame = gameName;
+                    win.classList.add('active');
+                    game.start();
+                });
+            });
+        });
+    </script>
+</body>
+</html>
