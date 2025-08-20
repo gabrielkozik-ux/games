@@ -12,7 +12,7 @@
         /* Custom fonts for games */
         body {
             font-family: 'Inter', sans-serif;
-            overflow: hidden; /* Hide scrollbars for an app-like feel */
+            overflow: auto; /* FIX: Enabled scrolling */
         }
         .font-press-start { font-family: 'Press Start 2P', cursive; }
         .font-vt323 { font-family: 'VT323', monospace; }
@@ -63,7 +63,7 @@
         }
     </style>
 </head>
-<body class="bg-gray-800 text-white p-4 sm:p-8 flex flex-col h-screen noselect">
+<body class="bg-gray-800 text-white p-4 sm:p-8 flex flex-col min-h-screen noselect">
     <header class="text-center mb-4 sm:mb-8">
         <h1 class="text-4xl md:text-6xl font-bungee tracking-wider">Retro Herní Arkáda</h1>
         <p class="text-gray-400 mt-2 font-vt323 text-xl">Klikni na hru pro spuštění / pauzu</p>
@@ -99,6 +99,12 @@
         // --- GLOBAL GAME CONTROLLER ---
         let activeGame = null;
         const gameInstances = {};
+        const keysPressed = {}; // For smooth key presses
+
+        // --- GLOBAL KEY LISTENERS for smooth movement ---
+        window.addEventListener('keydown', (e) => { keysPressed[e.key] = true; });
+        window.addEventListener('keyup', (e) => { keysPressed[e.key] = false; });
+
 
         // --- GAME IMPLEMENTATIONS ---
 
@@ -115,9 +121,14 @@
             gameOver: false,
             paused: false,
             loop: null,
+            // --- FIX: Speed control variables ---
+            lastUpdateTime: 0,
+            updateInterval: 120, // ms between updates. Higher value = slower snake.
+            
             init() {
                 this.ctx = this.canvas.getContext('2d');
                 this.reset();
+                // A specific listener for snake's turn-based input
                 window.addEventListener('keydown', this.handleInput.bind(this));
             },
             reset() {
@@ -126,7 +137,7 @@
                 this.newDirection = 'right';
                 this.score = 0;
                 this.gameOver = false;
-                if(this.canvas.width > 0) this.placeFood(); // Only place food if canvas is sized
+                if(this.canvas.width > 0) this.placeFood();
             },
             placeFood() {
                 const cols = Math.floor(this.canvas.width / this.tileSize);
@@ -138,13 +149,14 @@
             },
             handleInput(e) {
                 if (activeGame !== 'snake' || this.paused) return;
+                // This logic ensures you can't turn back on yourself
                 if (e.key === 'ArrowUp' && this.direction !== 'down') this.newDirection = 'up';
                 else if (e.key === 'ArrowDown' && this.direction !== 'up') this.newDirection = 'down';
                 else if (e.key === 'ArrowLeft' && this.direction !== 'right') this.newDirection = 'left';
                 else if (e.key === 'ArrowRight' && this.direction !== 'left') this.newDirection = 'right';
             },
             update() {
-                if (this.gameOver || this.paused) return;
+                if (this.gameOver) return;
 
                 this.direction = this.newDirection;
                 const head = { ...this.snake[0] };
@@ -201,24 +213,32 @@
                     this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2);
                 }
             },
-            gameLoop() {
-                this.update();
-                this.draw();
+            // --- FIX: Game loop with speed control ---
+            gameLoop(currentTime) {
+                if (!this.paused) {
+                    const deltaTime = currentTime - this.lastUpdateTime;
+                    if (deltaTime > this.updateInterval) {
+                        this.update();
+                        this.lastUpdateTime = currentTime;
+                    }
+                    this.draw();
+                }
                 this.loop = requestAnimationFrame(this.gameLoop.bind(this));
             },
             start() { 
-                // *** FIX: Set canvas dimensions right before starting the game ***
                 this.canvas.width = this.canvas.offsetWidth;
                 this.canvas.height = this.canvas.offsetHeight;
                 this.tileSize = Math.floor(this.canvas.width / 25);
                 
                 this.reset();
                 this.paused = false;
+                this.lastUpdateTime = 0;
                 if(this.loop) cancelAnimationFrame(this.loop);
-                this.gameLoop();
+                this.loop = requestAnimationFrame(this.gameLoop.bind(this));
             },
             stop() { 
                 cancelAnimationFrame(this.loop);
+                this.loop = null;
                 this.paused = true;
             },
             togglePause() {
@@ -239,11 +259,11 @@
             init() {
                 this.ctx = this.canvas.getContext('2d');
                 this.reset();
-                window.addEventListener('keydown', this.handleInput.bind(this));
+                // No specific listener needed, uses global keysPressed object
             },
             reset() {
                 this.paddleWidth = 10;
-                this.paddleHeight = this.canvas.height / 6;
+                this.paddleHeight = this.canvas.height / 5;
                 this.ballSize = 10;
                 
                 this.ball = {
@@ -254,15 +274,15 @@
                     size: this.ballSize
                 };
                 this.player = {
-                    x: 10,
+                    x: 20,
                     y: this.canvas.height / 2 - this.paddleHeight / 2,
                     width: this.paddleWidth,
                     height: this.paddleHeight,
                     score: 0,
-                    speed: 8
+                    speed: 6 // Adjusted for smooth movement
                 };
                 this.ai = {
-                    x: this.canvas.width - 20,
+                    x: this.canvas.width - 30,
                     y: this.canvas.height / 2 - this.paddleHeight / 2,
                     width: this.paddleWidth,
                     height: this.paddleHeight,
@@ -270,27 +290,32 @@
                     speed: 4
                 };
             },
-             handleInput(e) {
-                if (activeGame !== 'pong' || this.paused) return;
-                if (e.key === 'ArrowUp') {
-                    this.player.y -= this.player.speed * 2;
-                } else if (e.key === 'ArrowDown') {
-                    this.player.y += this.player.speed * 2;
+            update() {
+                if (this.paused) return;
+
+                // --- FIX: Smooth paddle movement ---
+                if (keysPressed['ArrowUp']) {
+                    this.player.y -= this.player.speed;
                 }
+                if (keysPressed['ArrowDown']) {
+                    this.player.y += this.player.speed;
+                }
+                // Clamp paddle position to stay within bounds
                 if (this.player.y < 0) this.player.y = 0;
                 if (this.player.y + this.player.height > this.canvas.height) {
                     this.player.y = this.canvas.height - this.player.height;
                 }
-            },
-            update() {
-                if (this.paused) return;
+                
+                // Ball movement
                 this.ball.x += this.ball.dx;
                 this.ball.y += this.ball.dy;
 
+                // Wall collision (top/bottom)
                 if (this.ball.y + this.ball.size > this.canvas.height || this.ball.y - this.ball.size < 0) {
                     this.ball.dy *= -1;
                 }
 
+                // Paddle collision
                 if (this.ball.x - this.ball.size < this.player.x + this.player.width &&
                     this.ball.x > this.player.x &&
                     this.ball.y > this.player.y && this.ball.y < this.player.y + this.player.height) {
@@ -302,6 +327,7 @@
                     this.ball.dx *= -1.1;
                 }
 
+                // Score
                 if (this.ball.x + this.ball.size < 0) {
                     this.ai.score++;
                     this.resetBall();
@@ -311,6 +337,7 @@
                     this.resetBall();
                 }
 
+                // AI movement
                 const aiCenter = this.ai.y + this.ai.height / 2;
                 if (aiCenter < this.ball.y - 35) this.ai.y += this.ai.speed;
                 else if (aiCenter > this.ball.y + 35) this.ai.y -= this.ai.speed;
@@ -355,17 +382,17 @@
                 this.loop = requestAnimationFrame(this.gameLoop.bind(this));
             },
             start() { 
-                // *** FIX: Set canvas dimensions right before starting the game ***
                 this.canvas.width = this.canvas.offsetWidth;
                 this.canvas.height = this.canvas.offsetHeight;
                 
                 this.reset();
                 this.paused = false;
                 if(this.loop) cancelAnimationFrame(this.loop);
-                this.gameLoop();
+                this.loop = requestAnimationFrame(this.gameLoop.bind(this));
             },
             stop() { 
                 cancelAnimationFrame(this.loop);
+                this.loop = null;
                 this.paused = true;
             },
             togglePause() {
@@ -388,11 +415,10 @@
             init() {
                 this.ctx = this.canvas.getContext('2d');
                 this.reset();
-                window.addEventListener('keydown', this.handleInput.bind(this));
             },
             reset() {
                 this.ball = { x: this.canvas.width / 2, y: this.canvas.height - 50, dx: 4, dy: -4, radius: 8 };
-                this.paddle = { x: this.canvas.width / 2 - 50, y: this.canvas.height - 20, width: 100, height: 10, speed: 10 };
+                this.paddle = { x: this.canvas.width / 2 - 50, y: this.canvas.height - 20, width: 100, height: 10, speed: 8 };
                 this.createBricks();
                 this.gameOver = false;
             },
@@ -419,18 +445,6 @@
                     }
                 }
             },
-            handleInput(e) {
-                if (activeGame !== 'breakout' || this.paused) return;
-                if (e.key === 'ArrowLeft') {
-                    this.paddle.x -= this.paddle.speed * 2;
-                } else if (e.key === 'ArrowRight') {
-                    this.paddle.x += this.paddle.speed * 2;
-                }
-                if (this.paddle.x < 0) this.paddle.x = 0;
-                if (this.paddle.x + this.paddle.width > this.canvas.width) {
-                    this.paddle.x = this.canvas.width - this.paddle.width;
-                }
-            },
             collisionDetection() {
                 for (let c = 0; c < this.brickColumnCount; c++) {
                     for (let r = 0; r < this.brickRowCount; r++) {
@@ -446,6 +460,11 @@
             },
             update() {
                 if (this.paused || this.gameOver) return;
+
+                if (keysPressed['ArrowLeft']) this.paddle.x -= this.paddle.speed;
+                if (keysPressed['ArrowRight']) this.paddle.x += this.paddle.speed;
+                if (this.paddle.x < 0) this.paddle.x = 0;
+                if (this.paddle.x + this.paddle.width > this.canvas.width) this.paddle.x = this.canvas.width - this.paddle.width;
 
                 this.ball.x += this.ball.dx;
                 this.ball.y += this.ball.dy;
@@ -503,17 +522,17 @@
                 this.loop = requestAnimationFrame(this.gameLoop.bind(this));
             },
             start() { 
-                // *** FIX: Set canvas dimensions right before starting the game ***
                 this.canvas.width = this.canvas.offsetWidth;
                 this.canvas.height = this.canvas.offsetHeight;
 
                 this.reset();
                 this.paused = false;
                 if(this.loop) cancelAnimationFrame(this.loop);
-                this.gameLoop();
+                this.loop = requestAnimationFrame(this.gameLoop.bind(this));
             },
             stop() { 
                 cancelAnimationFrame(this.loop);
+                this.loop = null;
                 this.paused = true;
             },
             togglePause() {
@@ -642,17 +661,17 @@
                 this.loop = requestAnimationFrame(this.gameLoop.bind(this));
             },
             start() { 
-                // *** FIX: Set canvas dimensions right before starting the game ***
                 this.canvas.width = this.canvas.offsetWidth;
                 this.canvas.height = this.canvas.offsetHeight;
                 
                 this.reset();
                 this.paused = false;
                 if(this.loop) cancelAnimationFrame(this.loop);
-                this.gameLoop();
+                this.loop = requestAnimationFrame(this.gameLoop.bind(this));
             },
             stop() { 
                 cancelAnimationFrame(this.loop);
+                this.loop = null;
                 this.paused = true;
             },
             togglePause() {
