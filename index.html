@@ -13,6 +13,7 @@
         body {
             font-family: 'Inter', sans-serif;
             transition: overflow 0.3s ease;
+            overflow: auto; /* Ensure scrollbar is visible by default */
         }
         .font-press-start { font-family: 'Press Start 2P', cursive; }
         .font-vt323 { font-family: 'VT323', monospace; }
@@ -136,7 +137,7 @@
             gameLoop(time) { if (!this.paused) { if (time - this.lastUpdateTime > this.updateInterval) { this.update(); this.lastUpdateTime = time; } this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
             start() { this.canvas.width = this.canvas.offsetWidth; this.canvas.height = this.canvas.offsetHeight; this.tileSize = Math.floor(this.canvas.width / 25); this.reset(); this.paused = false; this.lastUpdateTime = 0; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
             stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; },
-            togglePause() { this.paused = !this.paused; if (this.gameOver) this.start(); }
+            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) this.start(); }
         };
 
         // --- PONG ---
@@ -151,7 +152,7 @@
             gameLoop() { if (!this.paused) { this.update(); this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
             start() { this.canvas.width = this.canvas.offsetWidth; this.canvas.height = this.canvas.offsetHeight; this.reset(); this.paused = false; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
             stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; },
-            togglePause() { this.paused = !this.paused; }
+            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; }
         };
 
         // --- BREAKOUT (ENHANCED) ---
@@ -168,7 +169,7 @@
             gameLoop() { if (!this.paused) { this.update(); this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
             start() { this.canvas.width = this.canvas.offsetWidth; this.canvas.height = this.canvas.offsetHeight; this.reset(); this.paused = false; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
             stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; },
-            togglePause() { this.paused = !this.paused; if (this.gameOver) this.start(); }
+            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) this.start(); }
         };
 
         // --- DINO RUN ---
@@ -182,7 +183,7 @@
             gameLoop() { if (!this.paused) { this.update(); this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
             start() { this.canvas.width = this.canvas.offsetWidth; this.canvas.height = this.canvas.offsetHeight; this.reset(); this.paused = false; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
             stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; },
-            togglePause() { this.paused = !this.paused; if (this.gameOver) this.start(); }
+            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) this.start(); }
         };
 
         // --- SPACE INVADERS ---
@@ -197,7 +198,7 @@
             gameLoop() { if (!this.paused) { this.update(); this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
             start() { this.canvas.width = this.canvas.offsetWidth; this.canvas.height = this.canvas.offsetHeight; this.reset(); this.paused = false; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
             stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; },
-            togglePause() { this.paused = !this.paused; if (this.gameOver) this.start(); }
+            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) this.start(); }
         };
 
         // --- TETRIS ---
@@ -224,7 +225,7 @@
             gameLoop(time) { if (!this.paused) { this.update(time); this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
             start() { this.canvas.width = this.canvas.offsetWidth; this.canvas.height = this.canvas.offsetHeight; this.blockSize = this.canvas.height / this.rows; this.cols = Math.floor(this.canvas.width / this.blockSize); this.grid = this.createMatrix(this.cols, this.rows); this.score = 0; this.gameOver = false; this.paused = false; this.playerReset(); if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
             stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; },
-            togglePause() { this.paused = !this.paused; if (this.gameOver) this.start(); }
+            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) this.start(); }
         };
 
         // --- MAIN EVENT LISTENER ---
@@ -248,7 +249,7 @@
                         document.querySelector(`[data-game="${activeGame}"]`).classList.remove('active');
                     }
                     
-                    document.body.style.overflow = 'hidden'; // FIX: Disable scroll on game start
+                    document.body.style.overflow = 'hidden'; 
                     activeGame = gameName;
                     win.classList.add('active');
                     game.start();
