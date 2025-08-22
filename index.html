@@ -101,7 +101,6 @@
 
         <!-- Space Invaders Game -->
         <div id="invaders-window" class="game-window" data-game="invaders">
-            <!-- FIX: Added text-center to center the title -->
             <h2 class="text-4xl md:text-5xl font-press-start text-white text-center">SPACE INVADERS</h2>
             <canvas id="invaders-canvas"></canvas>
         </div>
@@ -127,6 +126,11 @@
             </div>
         </div>
     </footer>
+    
+    <!-- ADD: Audio element for Snake game music -->
+    <audio id="snake-music" loop>
+        <source src="hadi-tanec.mp3" type="audio/mpeg">
+    </audio>
 
     <script>
         // --- GLOBAL GAME CONTROLLER ---
@@ -144,17 +148,59 @@
         // --- SNAKE ---
         gameInstances.snake = {
             canvas: document.getElementById('snake-canvas'),
+            // ADD: Get the audio element
+            music: document.getElementById('snake-music'),
             ctx: null, tileSize: 20, snake: [], food: {}, direction: 'right', newDirection: 'right', score: 0, gameOver: false, paused: false, loop: null, lastUpdateTime: 0, updateInterval: 120,
             init() { this.ctx = this.canvas.getContext('2d'); this.reset(); window.addEventListener('keydown', this.handleInput.bind(this)); },
-            reset() { this.snake = [{ x: 10, y: 10 }]; this.direction = 'right'; this.newDirection = 'right'; this.score = 0; this.gameOver = false; if(this.canvas.width > 0) this.placeFood(); },
+            reset() { 
+                this.snake = [{ x: 10, y: 10 }]; 
+                this.direction = 'right'; 
+                this.newDirection = 'right'; 
+                this.score = 0; 
+                this.gameOver = false; 
+                if(this.canvas.width > 0) this.placeFood();
+                // ADD: Reset music time
+                this.music.currentTime = 0;
+            },
             placeFood() { const c = Math.floor(this.canvas.width / this.tileSize), r = Math.floor(this.canvas.height / this.tileSize); this.food = { x: Math.floor(Math.random() * c), y: Math.floor(Math.random() * r) }; },
             handleInput(e) { if (activeGame !== 'snake' || this.paused) return; if (e.key === 'ArrowUp' && this.direction !== 'down') this.newDirection = 'up'; else if (e.key === 'ArrowDown' && this.direction !== 'up') this.newDirection = 'down'; else if (e.key === 'ArrowLeft' && this.direction !== 'right') this.newDirection = 'left'; else if (e.key === 'ArrowRight' && this.direction !== 'left') this.newDirection = 'right'; },
-            update() { if (this.gameOver) return; this.direction = this.newDirection; const head = { ...this.snake[0] }; if (this.direction === 'right') head.x++; if (this.direction === 'left') head.x--; if (this.direction === 'up') head.y--; if (this.direction === 'down') head.y++; const c = Math.floor(this.canvas.width / this.tileSize), r = Math.floor(this.canvas.height / this.tileSize); if (head.x < 0 || head.x >= c || head.y < 0 || head.y >= r) { this.gameOver = true; document.body.style.overflow = 'auto'; return; } for (let i = 1; i < this.snake.length; i++) { if (head.x === this.snake[i].x && head.y === this.snake[i].y) { this.gameOver = true; document.body.style.overflow = 'auto'; return; } } this.snake.unshift(head); if (head.x === this.food.x && head.y === this.food.y) { this.score++; this.placeFood(); } else { this.snake.pop(); } },
+            update() { if (this.gameOver) { this.music.pause(); return; } this.direction = this.newDirection; const head = { ...this.snake[0] }; if (this.direction === 'right') head.x++; if (this.direction === 'left') head.x--; if (this.direction === 'up') head.y--; if (this.direction === 'down') head.y++; const c = Math.floor(this.canvas.width / this.tileSize), r = Math.floor(this.canvas.height / this.tileSize); if (head.x < 0 || head.x >= c || head.y < 0 || head.y >= r) { this.gameOver = true; document.body.style.overflow = 'auto'; this.music.pause(); return; } for (let i = 1; i < this.snake.length; i++) { if (head.x === this.snake[i].x && head.y === this.snake[i].y) { this.gameOver = true; document.body.style.overflow = 'auto'; this.music.pause(); return; } } this.snake.unshift(head); if (head.x === this.food.x && head.y === this.food.y) { this.score++; this.placeFood(); } else { this.snake.pop(); } },
             draw() { this.ctx.fillStyle = '#1a2e05'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = '#84cc16'; this.snake.forEach(seg => { this.ctx.fillRect(seg.x * this.tileSize, seg.y * this.tileSize, this.tileSize - 1, this.tileSize - 1); }); this.ctx.fillStyle = '#ef4444'; this.ctx.fillRect(this.food.x * this.tileSize, this.food.y * this.tileSize, this.tileSize, this.tileSize); this.ctx.fillStyle = 'white'; this.ctx.font = `${this.tileSize * 1.5}px "Press Start 2P"`; this.ctx.fillText(`Score: ${this.score}`, this.tileSize, this.tileSize * 2); if (this.gameOver) { this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = 'white'; this.ctx.textAlign = 'center'; this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2); } },
             gameLoop(time) { if (!this.paused) { if (time - this.lastUpdateTime > this.updateInterval) { this.update(); this.lastUpdateTime = time; } this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
-            start() { document.body.style.overflow = 'hidden'; this.canvas.width = this.canvas.offsetWidth; this.canvas.height = this.canvas.offsetHeight; this.tileSize = Math.floor(this.canvas.width / 25); this.reset(); this.paused = false; this.lastUpdateTime = 0; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
-            stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; },
-            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) this.start(); }
+            start() { 
+                document.body.style.overflow = 'hidden'; 
+                this.canvas.width = this.canvas.offsetWidth; 
+                this.canvas.height = this.canvas.offsetHeight; 
+                this.tileSize = Math.floor(this.canvas.width / 25); 
+                this.reset(); 
+                this.paused = false; 
+                this.lastUpdateTime = 0; 
+                if(this.loop) cancelAnimationFrame(this.loop); 
+                this.loop = requestAnimationFrame(this.gameLoop.bind(this));
+                // ADD: Play music
+                this.music.play();
+            },
+            stop() { 
+                if(this.loop) cancelAnimationFrame(this.loop); 
+                this.loop = null; 
+                this.paused = true;
+                // ADD: Pause music
+                this.music.pause();
+            },
+            togglePause() { 
+                this.paused = !this.paused; 
+                document.body.style.overflow = this.paused ? 'auto' : 'hidden'; 
+                if (this.gameOver) {
+                    this.start(); 
+                } else {
+                    // ADD: Toggle music play/pause
+                    if (this.paused) {
+                        this.music.pause();
+                    } else {
+                        this.music.play();
+                    }
+                }
+            }
         };
 
         // --- PONG ---
@@ -210,15 +256,12 @@
         // --- SPACE INVADERS ---
         gameInstances.invaders = {
             canvas: document.getElementById('invaders-canvas'), ctx: null, player: {}, bullets: [], invaders: [], invaderBullets: [], invaderDirection: 1, invaderSpeed: 0.5, score: 0, paused: false, gameOver: false, loop: null, lastShotTime: 0, shootCooldown: 300,
-            // FIX: Removed reset() from init to prevent it from running with 0 canvas width
             init() { this.ctx = this.canvas.getContext('2d'); window.addEventListener('keydown', this.handleInput.bind(this)); },
             reset() { this.player = { x: this.canvas.width / 2 - 25, y: this.canvas.height - 40, width: 50, height: 20, speed: 5 }; this.bullets = []; this.invaderBullets = []; this.createInvaders(); this.score = 0; this.gameOver = false; },
-            // FIX: Rewrote createInvaders to be responsive to canvas size
             createInvaders() {
                 this.invaders = [];
                 const rows = 5;
                 const cols = 10;
-                // Calculate invader size and spacing based on canvas width to prevent immediate edge collision
                 const invaderWidth = this.canvas.width / 25;
                 const invaderHeight = invaderWidth * 0.8;
                 const invaderPadding = invaderWidth / 2;
