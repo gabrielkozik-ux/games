@@ -3,19 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Optimalizace: Přidán meta description pro SEO -->
     <meta name="description" content="Zahrajte si klasické retro hry jako Snake, Pong, Tetris a další přímo ve vašem prohlížeči. Arkáda plná nostalgické zábavy.">
     <title>Retro Herní Arkáda</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Silkscreen&family=Bungee&display=swap" rel="stylesheet">
+    <!-- Přidána rodina Inter, protože je použita v CSS -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Press+Start+2P&family=VT323&family=Silkscreen&family=Bungee&display=swap" rel="stylesheet">
     <style>
-        /* Custom fonts for games */
         body {
-            font-family: 'Inter', sans-serif;
-            transition: overflow 0.3s ease;
-            overflow: auto; /* Ensure scrollbar is visible by default */
+            font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
+            overflow: auto;
         }
         .font-press-start { font-family: 'Press Start 2P', cursive; }
         .font-vt323 { font-family: 'VT323', monospace; }
@@ -25,7 +23,7 @@
         /* Game window styles */
         .game-window {
             aspect-ratio: 4 / 3;
-            transition: all 0.3s ease-in-out;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
             cursor: pointer;
             display: flex;
             justify-content: center;
@@ -34,12 +32,9 @@
             border: 4px solid #1f2937;
             box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2), 0 4px 6px -2px rgba(0,0,0,0.1);
             position: relative;
-            /* Optimalizace: Reset pro <button> element */
-            background: none;
-            padding: 0;
             text-align: inherit;
+            background-color: #1f2937; /* respektuje bg-gray-800 */
         }
-        /* Optimalizace: Vizuální zpětná vazba pro interaktivitu */
         .game-window:hover {
             transform: scale(1.03);
             box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2), 0 8px 10px -6px rgba(0,0,0,0.1);
@@ -61,13 +56,11 @@
             width: 100%;
             height: 100%;
             background-color: #000;
+            display: block;
         }
         .game-overlay {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            inset: 0;
             background: rgba(0,0,0,0.7);
             color: white;
             display: flex;
@@ -76,23 +69,25 @@
             font-size: 2rem;
             pointer-events: none;
             opacity: 0;
-            transition: opacity 0.3s;
+            transition: opacity 0.2s ease;
         }
-        .game-window.active .game-overlay {
-            opacity: 1;
-            pointer-events: auto;
-        }
+        /* Zobraz titulek na hover, ale skryj při aktivní hře */
+        .game-window:hover .game-overlay { opacity: 1; }
+        .game-window.active .game-overlay { opacity: 0; }
+
         #countdown {
             font-size: 8rem;
             color: white;
-            position: absolute;
+            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 60;
             pointer-events: none;
             text-shadow: 0 0 15px rgba(255,255,255,0.7);
+            display: none;
         }
+
         /* Tetris next piece canvas */
         #next-piece-canvas {
             position: absolute;
@@ -119,34 +114,34 @@
         </header>
 
         <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <!-- Snake -->
-            <button data-game="snake" class="game-window bg-gray-800">
-                <div class="game-overlay font-silkscreen text-4xl">HADI TANEC</div>
-                <canvas id="snake-canvas"></canvas>
+            <!-- Snake (zatím nedostupné) -->
+            <button data-game="snake" class="game-window bg-gray-800 opacity-60 pointer-events-none" aria-disabled="true" aria-label="Snake – brzy">
+                <div class="game-overlay font-silkscreen text-4xl">SNAKE (brzy)</div>
+                <canvas id="snake-canvas" aria-hidden="true"></canvas>
             </button>
             <!-- Pong -->
-            <button data-game="pong" class="game-window bg-gray-800">
+            <button data-game="pong" class="game-window bg-gray-800" aria-label="Pong">
                 <div class="game-overlay font-press-start text-4xl">PONG</div>
                 <canvas id="pong-canvas"></canvas>
             </button>
             <!-- Breakout -->
-            <button data-game="breakout" class="game-window bg-gray-800">
+            <button data-game="breakout" class="game-window bg-gray-800" aria-label="Breakout">
                 <div class="game-overlay font-bungee text-4xl">BREAKOUT</div>
                 <canvas id="breakout-canvas"></canvas>
             </button>
             <!-- Tetris -->
-            <button data-game="tetris" class="game-window bg-gray-800">
+            <button data-game="tetris" class="game-window bg-gray-800" aria-label="Tetris">
                 <div class="game-overlay font-press-start text-4xl">TETRIS</div>
                 <canvas id="tetris-canvas"></canvas>
                 <canvas id="next-piece-canvas" class="hidden"></canvas>
             </button>
-            <!-- Space Invaders -->
-            <button data-game="invaders" class="game-window bg-gray-800">
-                <div class="game-overlay font-vt323 text-5xl">SPACE INVADERS</div>
-                <canvas id="invaders-canvas"></canvas>
+            <!-- Space Invaders (zatím nedostupné) -->
+            <button data-game="invaders" class="game-window bg-gray-800 opacity-60 pointer-events-none" aria-disabled="true" aria-label="Space Invaders – brzy">
+                <div class="game-overlay font-vt323 text-5xl">SPACE INVADERS (brzy)</div>
+                <canvas id="invaders-canvas" aria-hidden="true"></canvas>
             </button>
             <!-- Dino Run -->
-            <button data-game="dino" class="game-window bg-gray-800">
+            <button data-game="dino" class="game-window bg-gray-800" aria-label="Dino Run">
                 <div class="game-overlay font-silkscreen text-4xl">DINO RUN</div>
                 <canvas id="dino-canvas"></canvas>
             </button>
@@ -158,7 +153,7 @@
     </div>
 
     <!-- Countdown Element -->
-    <div id="countdown" class="font-press-start"></div>
+    <div id="countdown" class="font-press-start" aria-live="polite"></div>
 
     <!-- Audio files -->
     <audio id="snake-music" loop src="hadi-tanec.mp3"></audio>
@@ -166,7 +161,8 @@
     <audio id="breakout-music" loop src="breakout.mp3"></audio>
     <audio id="tetris-music" loop src="tetris.mp3"></audio>
     <audio id="invaders-music" loop src="space-invaders.mp3"></audio>
-    <audio id="dino-music" loop src="Dino-run.mp3"></audio>
+    <!-- Opraven název souboru (písmena) -->
+    <audio id="dino-music" loop src="dino-run.mp3"></audio>
     <audio id="countdown-sound" src="ready-fight.mp3"></audio>
     <audio id="game-over-sound" src="game-over.mp3"></audio>
     <audio id="victory-sound" src="victory.mp3"></audio>
@@ -176,14 +172,13 @@ let activeGame = null;
 const gameInstances = {};
 
 // --- UTILITY FUNCTIONS ---
-function playCountdown(game, callback) {
+function playCountdown(callback) {
     const countdownElement = document.getElementById('countdown');
     const countdownSound = document.getElementById('countdown-sound');
     let count = 3;
     countdownElement.style.display = 'block';
     countdownElement.textContent = count;
-    countdownSound.currentTime = 0;
-    countdownSound.play();
+    try { countdownSound.currentTime = 0; countdownSound.play(); } catch(e) {}
 
     const interval = setInterval(() => {
         count--;
@@ -195,28 +190,29 @@ function playCountdown(game, callback) {
             setTimeout(() => {
                 countdownElement.style.display = 'none';
                 callback();
-            }, 500);
+            }, 450);
         }
     }, 1000);
 }
 
 function playGameOverSound() {
     const sound = document.getElementById('game-over-sound');
-    sound.currentTime = 0;
-    sound.play();
+    try { sound.currentTime = 0; sound.play(); } catch(e) {}
 }
 
 function playVictorySound() {
     const sound = document.getElementById('victory-sound');
-    sound.currentTime = 0;
-    sound.play();
+    try { sound.currentTime = 0; sound.play(); } catch(e) {}
 }
 
+function clamp(val, min, max) {
+    return Math.max(min, Math.min(max, val));
+}
 
 // --- PONG ---
 gameInstances.pong = {
-    canvas: document.getElementById('pong-canvas'),
-    music: document.getElementById('pong-music'),
+    canvas: null,
+    music: null,
     ctx: null,
     ball: {},
     player: {},
@@ -228,12 +224,14 @@ gameInstances.pong = {
     winner: null,
 
     init() {
+        this.canvas = document.getElementById('pong-canvas');
+        this.music = document.getElementById('pong-music');
         this.ctx = this.canvas.getContext('2d');
         this.reset();
         window.addEventListener('mousemove', e => {
             if (activeGame === 'pong' && !this.paused) {
                 const rect = this.canvas.getBoundingClientRect();
-                this.player.y = e.clientY - rect.top - this.player.height / 2;
+                this.player.y = clamp(e.clientY - rect.top - this.player.height / 2, 0, this.canvas.height - this.player.height);
             }
         });
     },
@@ -261,11 +259,11 @@ gameInstances.pong = {
         // Paddle collision
         if (this.ball.x - this.ball.radius < this.player.x + this.player.width &&
             this.ball.y > this.player.y && this.ball.y < this.player.y + this.player.height) {
-            this.ball.dx *= -1;
+            this.ball.dx = Math.abs(this.ball.dx);
         }
         if (this.ball.x + this.ball.radius > this.computer.x &&
             this.ball.y > this.computer.y && this.ball.y < this.computer.y + this.computer.height) {
-            this.ball.dx *= -1;
+            this.ball.dx = -Math.abs(this.ball.dx);
         }
 
         // Score
@@ -279,6 +277,7 @@ gameInstances.pong = {
 
         // Computer AI
         this.computer.y += (this.ball.y - (this.computer.y + this.computer.height / 2)) * 0.05;
+        this.computer.y = clamp(this.computer.y, 0, this.canvas.height - this.computer.height);
 
         // Check for winner
         if (this.player.score >= this.winningScore) {
@@ -315,7 +314,9 @@ gameInstances.pong = {
         
         // Score
         this.ctx.font = '32px "Press Start 2P"';
+        this.ctx.textAlign = 'left';
         this.ctx.fillText(this.player.score, this.canvas.width / 4, 50);
+        this.ctx.textAlign = 'right';
         this.ctx.fillText(this.computer.score, 3 * this.canvas.width / 4, 50);
 
         if (this.gameOver) {
@@ -342,29 +343,29 @@ gameInstances.pong = {
         this.paused = false;
         if(this.loop) cancelAnimationFrame(this.loop);
         this.loop = requestAnimationFrame(this.gameLoop.bind(this));
-        this.music.play();
+        try { this.music.play(); } catch(e) {}
     },
 
     stop() {
         if(this.loop) cancelAnimationFrame(this.loop);
         this.loop = null;
         this.paused = true;
-        this.music.pause();
+        try { this.music.pause(); } catch(e) {}
         document.body.style.overflow = 'auto';
     },
 
     togglePause() {
         this.paused = !this.paused;
-        document.body.style.overflow = this.paused ? 'hidden' : 'auto';
-        if (this.paused) this.music.pause();
-        else if (!this.gameOver) this.music.play();
+        document.body.style.overflow = this.paused ? 'auto' : 'hidden';
+        if (this.paused) { try { this.music.pause(); } catch(e) {} }
+        else if (!this.gameOver) { try { this.music.play(); } catch(e) {} }
     }
 };
 
 // --- BREAKOUT ---
 gameInstances.breakout = {
-    canvas: document.getElementById('breakout-canvas'),
-    music: document.getElementById('breakout-music'),
+    canvas: null,
+    music: null,
     ctx: null,
     ball: {},
     paddle: {},
@@ -378,12 +379,14 @@ gameInstances.breakout = {
     victory: false,
 
     init() {
+        this.canvas = document.getElementById('breakout-canvas');
+        this.music = document.getElementById('breakout-music');
         this.ctx = this.canvas.getContext('2d');
         this.reset();
         window.addEventListener('mousemove', e => {
             if (activeGame === 'breakout' && !this.paused) {
                 const rect = this.canvas.getBoundingClientRect();
-                this.paddle.x = e.clientX - rect.left - this.paddle.width / 2;
+                this.paddle.x = clamp(e.clientX - rect.left - this.paddle.width / 2, 0, this.canvas.width - this.paddle.width);
             }
         });
     },
@@ -434,12 +437,13 @@ gameInstances.breakout = {
 
         // Paddle collision
         if (this.ball.y + this.ball.radius > this.paddle.y &&
-            this.ball.x > this.paddle.x && this.ball.x < this.paddle.x + this.paddle.width) {
+            this.ball.x > this.paddle.x && this.ball.x < this.paddle.x + this.paddle.width &&
+            this.ball.dy > 0) {
             this.ball.dy *= -1;
         }
 
         // Brick collision
-        this.bricks.forEach((brick, index) => {
+        this.bricks.forEach((brick) => {
             if (brick.visible &&
                 this.ball.x > brick.x && this.ball.x < brick.x + brick.width &&
                 this.ball.y > brick.y && this.ball.y < brick.y + brick.height) {
@@ -455,18 +459,19 @@ gameInstances.breakout = {
         
         this.bricks = this.bricks.filter(b => b.visible);
 
-        // Power-up movement and collision
-        this.powerUps.forEach((pu, index) => {
+        // Power-ups
+        for (let i = this.powerUps.length - 1; i >= 0; i--) {
+            const pu = this.powerUps[i];
             pu.y += 2;
             if (pu.y > this.paddle.y && pu.x > this.paddle.x && pu.x < this.paddle.x + this.paddle.width) {
                 if (pu.type === 'widen') {
                     this.paddle.width = Math.min(this.paddle.width + 20, 200);
                 }
-                this.powerUps.splice(index, 1);
+                this.powerUps.splice(i, 1);
             } else if (pu.y > this.canvas.height) {
-                 this.powerUps.splice(index, 1);
+                this.powerUps.splice(i, 1);
             }
-        });
+        }
 
         // Lose life
         if (this.ball.y + this.ball.radius > this.canvas.height) {
@@ -524,7 +529,7 @@ gameInstances.breakout = {
         this.ctx.fillStyle = 'white';
         this.ctx.font = '16px "Silkscreen"';
         this.ctx.fillText(`Lives: ${this.lives}`, 10, 20);
-        this.ctx.fillText(`Score: ${this.score}`, this.canvas.width - 150, 20);
+        this.ctx.fillText(`Score: ${this.score}`, this.canvas.width - 120, 20);
 
         if (this.gameOver) {
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
@@ -551,29 +556,29 @@ gameInstances.breakout = {
         this.paused = false;
         if(this.loop) cancelAnimationFrame(this.loop);
         this.loop = requestAnimationFrame(this.gameLoop.bind(this));
-        this.music.play();
+        try { this.music.play(); } catch(e) {}
     },
 
     stop() {
         if(this.loop) cancelAnimationFrame(this.loop);
         this.loop = null;
         this.paused = true;
-        this.music.pause();
+        try { this.music.pause(); } catch(e) {}
         document.body.style.overflow = 'auto';
     },
 
     togglePause() {
         this.paused = !this.paused;
-        document.body.style.overflow = this.paused ? 'hidden' : 'auto';
-        if (this.paused) this.music.pause();
-        else if (!this.gameOver) this.music.play();
+        document.body.style.overflow = this.paused ? 'auto' : 'hidden';
+        if (this.paused) { try { this.music.pause(); } catch(e) {} }
+        else if (!this.gameOver) { try { this.music.play(); } catch(e) {} }
     }
 };
 
 // --- DINO RUN ---
 gameInstances.dino = {
-    canvas: document.getElementById('dino-canvas'),
-    music: document.getElementById('dino-music'),
+    canvas: null,
+    music: null,
     ctx: null,
     dino: {},
     obstacles: [],
@@ -586,6 +591,8 @@ gameInstances.dino = {
     loop: null,
 
     init() {
+        this.canvas = document.getElementById('dino-canvas');
+        this.music = document.getElementById('dino-music');
         this.ctx = this.canvas.getContext('2d');
         this.reset();
         window.addEventListener('keydown', this.handleInput.bind(this));
@@ -613,7 +620,7 @@ gameInstances.dino = {
     },
     
     handleKeyUp(e) {
-        if (activeGame !== 'dino' && e.code === 'ArrowDown') {
+        if (activeGame === 'dino' && e.code === 'ArrowDown') {
             this.dino.isDucking = false;
         }
     },
@@ -648,7 +655,8 @@ gameInstances.dino = {
             }
         }
 
-        this.obstacles.forEach((obs, i) => {
+        for (let i = this.obstacles.length - 1; i >= 0; i--) {
+            const obs = this.obstacles[i];
             obs.x -= this.gameSpeed;
             if (obs.type === 'bird' && this.frameCount % 10 === 0) obs.frame = (obs.frame + 1) % 2;
             if (obs.x + obs.width < 0) this.obstacles.splice(i, 1);
@@ -665,7 +673,7 @@ gameInstances.dino = {
                 playGameOverSound();
                 this.stop();
             }
-        });
+        }
         
         this.score++;
         if (this.score % 100 === 0) this.gameSpeed += 0.2;
@@ -755,30 +763,30 @@ gameInstances.dino = {
         this.paused = false;
         if(this.loop) cancelAnimationFrame(this.loop);
         this.loop = requestAnimationFrame(this.gameLoop.bind(this));
-        this.music.play();
+        try { this.music.play(); } catch(e) {}
     },
 
     stop() {
         if(this.loop) cancelAnimationFrame(this.loop);
         this.loop = null;
         this.paused = true;
-        this.music.pause();
+        try { this.music.pause(); } catch(e) {}
         document.body.style.overflow = 'auto';
     },
 
     togglePause() {
         this.paused = !this.paused;
-        document.body.style.overflow = this.paused ? 'hidden' : 'auto';
-        if (this.paused) this.music.pause();
-        else if (!this.gameOver) this.music.play();
+        document.body.style.overflow = this.paused ? 'auto' : 'hidden';
+        if (this.paused) { try { this.music.pause(); } catch(e) {} }
+        else if (!this.gameOver) { try { this.music.play(); } catch(e) {} }
     }
 };
 
 // --- TETRIS ---
 gameInstances.tetris = {
-    canvas: document.getElementById('tetris-canvas'),
-    nextCanvas: document.getElementById('next-piece-canvas'),
-    music: document.getElementById('tetris-music'),
+    canvas: null,
+    nextCanvas: null,
+    music: null,
     ctx: null,
     nextCtx: null,
     grid: null,
@@ -797,13 +805,13 @@ gameInstances.tetris = {
     nextPiece: null,
 
     init() {
+        this.canvas = document.getElementById('tetris-canvas');
+        this.nextCanvas = document.getElementById('next-piece-canvas');
+        this.music = document.getElementById('tetris-music');
         this.ctx = this.canvas.getContext('2d');
         this.nextCtx = this.nextCanvas.getContext('2d');
-        this.blockSize = this.canvas.width / this.cols;
-        this.ctx.scale(this.blockSize, this.blockSize);
-        this.nextCtx.scale(20, 20); // Scale for the smaller canvas
-        this.reset();
         window.addEventListener('keydown', this.handleInput.bind(this));
+        this.reset();
     },
 
     reset() {
@@ -816,9 +824,7 @@ gameInstances.tetris = {
 
     createMatrix(w, h) {
         const matrix = [];
-        while (h--) {
-            matrix.push(new Array(w).fill(0));
-        }
+        while (h--) matrix.push(new Array(w).fill(0));
         return matrix;
     },
 
@@ -845,10 +851,14 @@ gameInstances.tetris = {
     },
 
     collide(grid, player) {
-        const [m, o] = [player.matrix, player.pos];
+        const m = player.matrix;
+        const o = player.pos;
         for (let y = 0; y < m.length; ++y) {
             for (let x = 0; x < m[y].length; ++x) {
-                if (m[y][x] !== 0 && (grid[y + o.y] && grid[y + o.y][x + o.x]) !== 0) return true;
+                if (m[y][x] !== 0) {
+                    const row = grid[y + o.y];
+                    if (!row || row[x + o.x] !== 0) return true; // kolize mimo mřížku nebo s blokem
+                }
             }
         }
         return false;
@@ -870,11 +880,8 @@ gameInstances.tetris = {
                 [matrix[x][y], matrix[y][x]] = [matrix[y][x], matrix[x][y]];
             }
         }
-        if (dir > 0) {
-            matrix.forEach(row => row.reverse());
-        } else {
-            matrix.reverse();
-        }
+        if (dir > 0) matrix.forEach(row => row.reverse());
+        else matrix.reverse();
     },
 
     playerRotate(dir) {
@@ -950,34 +957,32 @@ gameInstances.tetris = {
     },
 
     draw() {
+        // vymazání celé plochy (v pixelech)
+        this.ctx.setTransform(1,0,0,1,0,0);
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        // nastavení mřížky podle blockSize
+        this.ctx.setTransform(this.blockSize, 0, 0, this.blockSize, 0, 0);
+
         this.ctx.fillStyle = '#1e293b';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillRect(0, 0, this.canvas.width / this.blockSize, this.canvas.height / this.blockSize);
         
         if (!this.grid || !this.player.matrix) return;
         
         this.drawMatrix(this.grid, { x: 0, y: 0 }, this.ctx);
         this.drawMatrix(this.player.matrix, this.player.pos, this.ctx);
         
-        // Draw next piece
+        // Next piece (pevná mřížka 4x4)
+        this.nextCtx.setTransform(1,0,0,1,0,0);
+        this.nextCtx.clearRect(0, 0, this.nextCanvas.width, this.nextCanvas.height);
         this.nextCtx.fillStyle = '#0d1117';
         this.nextCtx.fillRect(0, 0, this.nextCanvas.width, this.nextCanvas.height);
+        this.nextCtx.setTransform(20,0,0,20,0,0);
         this.drawMatrix(this.nextPiece, {x: 1, y: 1}, this.nextCtx);
 
-
+        // Score
         this.ctx.fillStyle = 'white';
         this.ctx.font = '1px "Silkscreen"';
         this.ctx.fillText(`Score: ${this.score}`, 0.5, 1);
-
-        if (this.gameOver) {
-            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-            this.ctx.fillRect(0, 0, this.cols, this.rows);
-            this.ctx.fillStyle = 'black';
-            this.ctx.textAlign = 'center';
-            this.ctx.font = '2px "Silkscreen"';
-            this.ctx.fillText('GAME OVER', this.cols / 2, this.rows / 2);
-            this.ctx.font = '1px "Silkscreen"';
-            this.ctx.fillText('Klikni pro restart', this.cols / 2, this.rows / 2 + 2);
-        }
     },
 
     gameLoop(time) {
@@ -989,12 +994,18 @@ gameInstances.tetris = {
     },
 
     start() {
+        // přepočti blockSize dle aktuální velikosti canvasu
+        this.blockSize = Math.floor(Math.min(this.canvas.width / this.cols, this.canvas.height / this.rows)) || 20;
+        // zajisti rozumné rozměry pro next-canvas (atributy, ne jen CSS)
+        this.nextCanvas.width = 80;
+        this.nextCanvas.height = 80;
+
         this.paused = false;
         this.lastTime = 0;
         this.dropCounter = 0;
         if(this.loop) cancelAnimationFrame(this.loop);
         this.loop = requestAnimationFrame(this.gameLoop.bind(this));
-        this.music.play();
+        try { this.music.play(); } catch(e) {}
         this.nextCanvas.classList.remove('hidden');
     },
 
@@ -1002,16 +1013,16 @@ gameInstances.tetris = {
         if(this.loop) cancelAnimationFrame(this.loop);
         this.loop = null;
         this.paused = true;
-        this.music.pause();
+        try { this.music.pause(); } catch(e) {}
         document.body.style.overflow = 'auto';
         this.nextCanvas.classList.add('hidden');
     },
 
     togglePause() {
         this.paused = !this.paused;
-        document.body.style.overflow = this.paused ? 'hidden' : 'auto';
-        if (this.paused) this.music.pause();
-        else if (!this.gameOver) this.music.play();
+        document.body.style.overflow = this.paused ? 'auto' : 'hidden';
+        if (this.paused) { try { this.music.pause(); } catch(e) {} }
+        else if (!this.gameOver) { try { this.music.play(); } catch(e) {} }
     }
 };
 
@@ -1025,6 +1036,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const gameName = win.dataset.game;
             const game = gameInstances[gameName];
 
+            // Pokud hra není implementována, ignoruj klik
+            if (!game) return;
+
             if (gameName === activeGame) {
                 if (!game.gameOver) {
                     game.togglePause();
@@ -1034,30 +1048,28 @@ document.addEventListener('DOMContentLoaded', () => {
                         gameInstances[activeGame].stop();
                     }
                     game.reset();
-                    playCountdown(game, () => {
-                        game.start();
-                    });
+                    playCountdown(() => game.start());
                 }
                 return;
             }
 
             if (activeGame && gameInstances[activeGame]) {
                 gameInstances[activeGame].stop();
-                document.querySelector(`[data-game="${activeGame}"]`).classList.remove('active');
+                const prev = document.querySelector(`[data-game="${activeGame}"]`);
+                if (prev) prev.classList.remove('active');
             }
 
             document.body.style.overflow = 'hidden';
             activeGame = gameName;
             win.classList.add('active');
             
-            game.canvas.width = game.canvas.offsetWidth;
-            game.canvas.height = game.canvas.offsetHeight;
+            // Synchronizace kreslícího bufferu s CSS velikostí
+            game.canvas.width = Math.floor(game.canvas.offsetWidth);
+            game.canvas.height = Math.floor(game.canvas.offsetHeight);
             game.reset();
             game.draw();
             
-            playCountdown(game, () => {
-                game.start();
-            });
+            playCountdown(() => game.start());
         });
     });
 });
