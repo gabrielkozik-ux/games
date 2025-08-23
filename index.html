@@ -1,9 +1,10 @@
-
 <!DOCTYPE html>
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Optimalizace: Přidán meta description pro SEO -->
+    <meta name="description" content="Zahrajte si klasické retro hry jako Snake, Pong, Tetris a další přímo ve vašem prohlížeči. Arkáda plná nostalgické zábavy.">
     <title>Retro Herní Arkáda</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -33,7 +34,22 @@
             border: 4px solid #1f2937;
             box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2), 0 4px 6px -2px rgba(0,0,0,0.1);
             position: relative;
+            /* Optimalizace: Reset pro <button> element */
+            background: none;
+            padding: 0;
+            text-align: inherit;
         }
+        /* Optimalizace: Vizuální zpětná vazba pro interaktivitu */
+        .game-window:hover {
+            transform: scale(1.03);
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3), 0 10px 10px -5px rgba(0,0,0,0.2);
+        }
+        /* Optimalizace: Zvýraznění pro ovládání klávesnicí */
+        .game-window:focus-visible {
+            outline: 4px solid #facc15; /* Bright yellow outline */
+            outline-offset: 4px;
+        }
+
         .game-window h2 {
             transition: opacity 0.3s ease;
         }
@@ -90,52 +106,48 @@
 <body class="bg-gray-800 text-white p-4 sm:p-8 flex flex-col min-h-screen noselect">
     <header class="text-center mb-4 sm:mb-8">
         <h1 class="text-4xl md:text-6xl font-bungee tracking-wider">Retro Herní Arkáda</h1>
-        <p class="text-gray-400 mt-2 font-vt323 text-xl">Klikni na hru pro spuštění / pauzu</p>
-        <p class="text-gray-500 mt-4 font-vt323 text-lg">Příjemnou zábavu ti přeje Gabriel</p>
+        <!-- Optimalizace: Zvýšený kontrast pro lepší čitelnost -->
+        <p class="text-gray-300 mt-2 font-vt323 text-xl">Klikni na hru pro spuštění / pauzu</p>
+        <p class="text-gray-400 mt-4 font-vt323 text-lg">Příjemnou zábavu ti přeje Gabriel</p>
     </header>
 
     <main class="flex-grow grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
-        <!-- Snake Game -->
-        <div id="snake-window" class="game-window" data-game="snake">
+        <!-- Optimalizace: Převod <div> na <button> pro přístupnost -->
+        <button id="snake-window" class="game-window" data-game="snake">
             <h2 class="text-4xl md:text-5xl font-press-start text-gray-900">SNAKE</h2>
             <canvas id="snake-canvas"></canvas>
             <div class="countdown-overlay font-press-start"></div>
-        </div>
+        </button>
 
-        <!-- Pong Game -->
-        <div id="pong-window" class="game-window" data-game="pong">
+        <button id="pong-window" class="game-window" data-game="pong">
             <h2 class="text-4xl md:text-5xl font-silkscreen text-gray-900">PONG</h2>
             <canvas id="pong-canvas"></canvas>
             <div class="countdown-overlay font-silkscreen"></div>
-        </div>
+        </button>
 
-        <!-- Breakout Game -->
-        <div id="breakout-window" class="game-window" data-game="breakout">
+        <button id="breakout-window" class="game-window" data-game="breakout">
             <h2 class="text-4xl md:text-5xl font-bungee text-gray-900">BREAKOUT</h2>
             <canvas id="breakout-canvas"></canvas>
             <div class="countdown-overlay font-bungee"></div>
-        </div>
+        </button>
         
-        <!-- Dino Run Game -->
-        <div id="dino-window" class="game-window" data-game="dino">
+        <button id="dino-window" class="game-window" data-game="dino">
             <h2 class="text-4xl md:text-5xl font-vt323 text-gray-900">DINO RUN</h2>
             <canvas id="dino-canvas"></canvas>
             <div class="countdown-overlay font-vt323"></div>
-        </div>
+        </button>
 
-        <!-- Space Invaders Game -->
-        <div id="invaders-window" class="game-window" data-game="invaders">
+        <button id="invaders-window" class="game-window" data-game="invaders">
             <h2 class="text-4xl md:text-5xl font-press-start text-white text-center">SPACE INVADERS</h2>
             <canvas id="invaders-canvas"></canvas>
             <div class="countdown-overlay font-press-start"></div>
-        </div>
+        </button>
 
-        <!-- Tetris Game -->
-        <div id="tetris-window" class="game-window" data-game="tetris">
+        <button id="tetris-window" class="game-window" data-game="tetris">
             <h2 class="text-4xl md:text-5xl font-silkscreen text-gray-900">TETRIS</h2>
             <canvas id="tetris-canvas"></canvas>
             <div class="countdown-overlay font-silkscreen"></div>
-        </div>
+        </button>
     </main>
 
     <footer class="mt-8 pt-6 border-t border-gray-700 text-center">
@@ -148,7 +160,8 @@
                 </a>
             </div>
             <div>
-                <img src="bmc_qr.png" alt="QR kód pro Buy Me a Coffee" class="w-32 h-32 rounded-lg border-4 border-gray-600">
+                <!-- Optimalizace: Přidány atributy width a height pro prevenci CLS -->
+                <img src="bmc_qr.png" alt="QR kód pro Buy Me a Coffee" class="w-32 h-32 rounded-lg border-4 border-gray-600" width="128" height="128">
             </div>
         </div>
     </footer>
@@ -185,6 +198,8 @@
             }
             gameOverSound.currentTime = 0;
             gameOverSound.play();
+            // Optimalizace: Vždy obnovit scrollbar po skončení hry
+            document.body.style.overflow = 'auto';
         }
 
         // --- GLOBAL FUNCTION for Countdown ---
@@ -238,15 +253,13 @@
                 const c = Math.floor(this.canvas.width / this.tileSize), r = Math.floor(this.canvas.height / this.tileSize); 
                 if (head.x < 0 || head.x >= c || head.y < 0 || head.y >= r) { 
                     this.gameOver = true; 
-                    document.body.style.overflow = 'auto'; 
-                    playGameOverSound(); // Play game over sound
+                    playGameOverSound();
                     return; 
                 } 
                 for (let i = 1; i < this.snake.length; i++) { 
                     if (head.x === this.snake[i].x && head.y === this.snake[i].y) { 
                         this.gameOver = true; 
-                        document.body.style.overflow = 'auto'; 
-                        playGameOverSound(); // Play game over sound
+                        playGameOverSound();
                         return; 
                     } 
                 } 
@@ -262,7 +275,7 @@
             gameLoop(time) { if (!this.paused) { if (time - this.lastUpdateTime > this.updateInterval) { this.update(); this.lastUpdateTime = time; } this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
             start() { this.paused = false; this.lastUpdateTime = 0; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); this.music.play(); },
             stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause(); },
-            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
+            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'hidden' : 'auto'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
         };
 
         // --- PONG ---
@@ -297,7 +310,6 @@
                 if (this.ai.y + this.ai.height > this.canvas.height) this.ai.y = this.canvas.height - this.ai.height;
                 if (this.player.score >= this.maxScore || this.ai.score >= this.maxScore) {
                     this.gameOver = true;
-                    document.body.style.overflow = 'auto';
                     playGameOverSound();
                 }
             },
@@ -313,7 +325,7 @@
             gameLoop() { if (!this.paused) { this.update(); this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
             start() { this.paused = false; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); this.music.play();},
             stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause();},
-            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
+            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'hidden' : 'auto'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
         };
 
         // --- BREAKOUT ---
@@ -338,7 +350,7 @@
                     ball.x += ball.dx; ball.y += ball.dy;
                     if (ball.x + ball.size > this.canvas.width || ball.x - ball.size < 0) ball.dx *= -1;
                     if (ball.y - ball.size < 0) ball.dy *= -1;
-                    if (ball.y + ball.size > this.canvas.height) { this.balls.splice(i, 1); if (this.balls.length === 0) { this.lives--; if (this.lives === 0) { this.gameOver = true; document.body.style.overflow = 'auto'; playGameOverSound(); } else { this.balls.push({ x: this.canvas.width / 2, y: this.canvas.height - 30, size: 7, dx: 4, dy: -4 }); } } }
+                    if (ball.y + ball.size > this.canvas.height) { this.balls.splice(i, 1); if (this.balls.length === 0) { this.lives--; if (this.lives === 0) { this.gameOver = true; playGameOverSound(); } else { this.balls.push({ x: this.canvas.width / 2, y: this.canvas.height - 30, size: 7, dx: 4, dy: -4 }); } } }
                     if (ball.y + ball.size > this.paddle.y && ball.x > this.paddle.x && ball.x < this.paddle.x + this.paddle.width) { ball.dy *= -1; }
                     this.bricks.forEach(brick => { if (brick.visible && ball.x > brick.x && ball.x < brick.x + brick.width && ball.y > brick.y && ball.y < brick.y + brick.height) { brick.visible = false; ball.dy *= -1; this.score++; } });
                 }
@@ -355,7 +367,7 @@
             gameLoop() { if (!this.paused) { this.update(); this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
             start() { this.paused = false; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); this.music.play();},
             stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause();},
-            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
+            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'hidden' : 'auto'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
         };
 
         // --- DINO RUN ---
@@ -383,7 +395,7 @@
                     if (obs.type === 'bird' && this.frameCount % 10 === 0) obs.frame = (obs.frame + 1) % 2;
                     if (obs.x + obs.width < 0) this.obstacles.splice(i, 1);
                     if (this.dino.x < obs.x + obs.width && this.dino.x + this.dino.width > obs.x && this.dino.y < obs.y + obs.height && this.dino.y + this.dino.height > obs.y) {
-                        this.gameOver = true; document.body.style.overflow = 'auto'; playGameOverSound();
+                        this.gameOver = true; playGameOverSound();
                     }
                 });
                 if (this.frameCount % 200 === 0) this.gameSpeed += 0.2;
@@ -403,7 +415,7 @@
             gameLoop() { if (!this.paused) { this.update(); this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
             start() { this.paused = false; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); this.music.play();},
             stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause();},
-            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
+            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'hidden' : 'auto'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
         };
 
         // --- SPACE INVADERS ---
@@ -434,14 +446,14 @@
                     b.y += b.dy;
                     if (b.y > this.canvas.height) this.invaderBullets.splice(i, 1);
                     if(b.x > this.player.x && b.x < this.player.x+this.player.width && b.y > this.player.y && b.y < this.player.y + this.player.height) {
-                        this.gameOver = true; document.body.style.overflow = 'auto'; playGameOverSound();
+                        this.gameOver = true; playGameOverSound();
                     }
                 });
                 let edgeReached = false;
                 this.invaders.forEach(inv => {
                     inv.x += this.invaderSpeed * this.invaderDirection;
                     if (inv.x <= 0 || inv.x + inv.width >= this.canvas.width) edgeReached = true;
-                    if (inv.y + inv.height > this.player.y) { this.gameOver = true; document.body.style.overflow = 'auto'; playGameOverSound(); }
+                    if (inv.y + inv.height > this.player.y) { this.gameOver = true; playGameOverSound(); }
                 });
                 if (edgeReached) { this.invaderDirection *= -1; this.invaders.forEach(inv => inv.y += 20); }
                 if (Math.random() < 0.02 && this.invaders.length > 0) { const shooter = this.invaders[Math.floor(Math.random() * this.invaders.length)]; this.invaderBullets.push({ x: shooter.x + shooter.width / 2, y: shooter.y + shooter.height, width: 3, height: 7, dy: 4 }); }
@@ -460,7 +472,7 @@
             gameLoop() { if (!this.paused) { this.update(); this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
             start() { this.paused = false; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); this.music.play();},
             stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause();},
-            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
+            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'hidden' : 'auto'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
         };
 
         // --- TETRIS ---
@@ -482,7 +494,7 @@
             },
             createMatrix(w, h) { const matrix = []; while (h--) { matrix.push(new Array(w).fill(0)); } return matrix; },
             createPiece(type) { if (type === 'T') return [[0, 0, 0], [1, 1, 1], [0, 1, 0]]; else if (type === 'O') return [[2, 2], [2, 2]]; else if (type === 'L') return [[0, 3, 0], [0, 3, 0], [0, 3, 3]]; else if (type === 'J') return [[0, 4, 0], [0, 4, 0], [4, 4, 0]]; else if (type === 'I') return [[0, 5, 0, 0], [0, 5, 0, 0], [0, 5, 0, 0], [0, 5, 0, 0]]; else if (type === 'S') return [[0, 6, 6], [6, 6, 0], [0, 0, 0]]; else if (type === 'Z') return [[7, 7, 0], [0, 7, 7], [0, 0, 0]]; },
-            playerReset() { const pieces = 'TJLOSZI'; this.player.matrix = this.createPiece(pieces[Math.floor(Math.random() * pieces.length)]); this.player.pos.y = 0; this.player.pos.x = (this.cols / 2 | 0) - (this.player.matrix[0].length / 2 | 0); if (this.collide(this.grid, this.player)) { this.gameOver = true; document.body.style.overflow = 'auto'; playGameOverSound(); } },
+            playerReset() { const pieces = 'TJLOSZI'; this.player.matrix = this.createPiece(pieces[Math.floor(Math.random() * pieces.length)]); this.player.pos.y = 0; this.player.pos.x = (this.cols / 2 | 0) - (this.player.matrix[0].length / 2 | 0); if (this.collide(this.grid, this.player)) { this.gameOver = true; playGameOverSound(); } },
             collide(grid, player) { const [m, o] = [player.matrix, player.pos]; for (let y = 0; y < m.length; ++y) { for (let x = 0; x < m[y].length; ++x) { if (m[y][x] !== 0 && (grid[y + o.y] && grid[y + o.y][x + o.x]) !== 0) return true; } } return false; },
             merge(grid, player) { player.matrix.forEach((row, y) => { row.forEach((value, x) => { if (value !== 0) { grid[y + player.pos.y][x + player.pos.x] = value; } }); }); },
             rotate(matrix, dir) { for (let y = 0; y < matrix.length; ++y) { for (let x = 0; x < y; ++x) { [matrix[x][y], matrix[y][x]] = [matrix[y][x], matrix[x][y]]; } } if (dir > 0) { matrix.forEach(row => row.reverse()); } else { matrix.reverse(); } },
@@ -510,7 +522,7 @@
                 this.music.play();
             },
             stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause();},
-            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
+            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'hidden' : 'auto'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
         };
 
         // --- MAIN EVENT LISTENER ---
