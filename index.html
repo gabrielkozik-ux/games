@@ -280,7 +280,7 @@
 
         // --- PONG ---
         gameInstances.pong = {
-            canvas: document.getElementById('pong-canvas'), music: document.getElementById('pong-music'), ctx: null, ball: {}, player: {}, ai: {}, paddleWidth: 0, paddleHeight: 0, paused: false, loop: null, maxScore: 5, gameOver: false,
+            canvas: document.getElementById('pong-canvas'), music: document.getElementById('pong-music'), ctx: null, ball: {}, player: {}, ai: {}, paddleWidth: 0, paddleHeight: 0, paused: false, loop: null, maxScore: 10, gameOver: false,
             init() { this.ctx = this.canvas.getContext('2d'); },
             reset() {
                 this.paddleWidth = this.canvas.width / 80;
