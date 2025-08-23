@@ -153,15 +153,15 @@
     </footer>
     
     <!-- Audio elements -->
-    <audio id="snake-music" loop>
-        <source src="hadi-tanec.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="game-over-sound">
-        <source src="game-over.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="ready-fight-sound">
-        <source src="ready-fight.mp3" type="audio/mpeg">
-    </audio>
+    <audio id="snake-music" loop><source src="hadi-tanec.mp3" type="audio/mpeg"></audio>
+    <audio id="pong-music" loop><source src="pong.mp3" type="audio/mpeg"></audio>
+    <audio id="breakout-music" loop><source src="breakout.mp3" type="audio/mpeg"></audio>
+    <audio id="dino-music" loop><source src="Dino-run.mp3" type="audio/mpeg"></audio>
+    <audio id="invaders-music" loop><source src="space-invaders.mp3" type="audio/mpeg"></audio>
+    <audio id="tetris-music" loop><source src="tetris.mp3" type="audio/mpeg"></audio>
+    
+    <audio id="game-over-sound"><source src="game-over.mp3" type="audio/mpeg"></audio>
+    <audio id="ready-fight-sound"><source src="ready-fight.mp3" type="audio/mpeg"></audio>
 
     <script>
         // --- GLOBAL GAME CONTROLLER ---
@@ -266,7 +266,7 @@
 
         // --- PONG ---
         gameInstances.pong = {
-            canvas: document.getElementById('pong-canvas'), ctx: null, ball: {}, player: {}, ai: {}, paddleWidth: 0, paddleHeight: 0, paused: false, loop: null, maxScore: 5, gameOver: false,
+            canvas: document.getElementById('pong-canvas'), music: document.getElementById('pong-music'), ctx: null, ball: {}, player: {}, ai: {}, paddleWidth: 0, paddleHeight: 0, paused: false, loop: null, maxScore: 5, gameOver: false,
             init() { this.ctx = this.canvas.getContext('2d'); },
             reset() {
                 this.paddleWidth = this.canvas.width / 80;
@@ -275,6 +275,7 @@
                 this.player = { x: 10, y: this.canvas.height / 2 - this.paddleHeight / 2, width: this.paddleWidth, height: this.paddleHeight, score: 0, speed: 8 };
                 this.ai = { x: this.canvas.width - 10 - this.paddleWidth, y: this.canvas.height / 2 - this.paddleHeight / 2, width: this.paddleWidth, height: this.paddleHeight, score: 0, speed: 4 };
                 this.gameOver = false;
+                this.music.currentTime = 0;
             },
             update() {
                 if (this.paused || this.gameOver) return;
@@ -309,24 +310,23 @@
                 if (this.gameOver) { this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = 'white'; this.ctx.textAlign = 'center'; this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2); }
             },
             gameLoop() { if (!this.paused) { this.update(); this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
-            start() { this.paused = false; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
-            stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; },
-            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) this.start(); }
+            start() { this.paused = false; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); this.music.play();},
+            stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause();},
+            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
         };
 
         // --- BREAKOUT ---
         gameInstances.breakout = {
-            canvas: document.getElementById('breakout-canvas'), ctx: null, paddle: {}, balls: [], bricks: [], score: 0, lives: 3, paused: false, gameOver: false, loop: null,
+            canvas: document.getElementById('breakout-canvas'), music: document.getElementById('breakout-music'), ctx: null, paddle: {}, balls: [], bricks: [], score: 0, lives: 3, paused: false, gameOver: false, loop: null,
             init() { this.ctx = this.canvas.getContext('2d'); },
             reset() {
                 this.paddle = { x: this.canvas.width / 2 - 50, y: this.canvas.height - 20, width: 100, height: 10, speed: 10 };
                 this.balls = [{ x: this.canvas.width / 2, y: this.canvas.height - 30, size: 7, dx: 4, dy: -4 }];
-                this.createBricks(); this.score = 0; this.lives = 3; this.gameOver = false;
+                this.createBricks(); this.score = 0; this.lives = 3; this.gameOver = false; this.music.currentTime = 0;
             },
             createBricks() { this.bricks = []; const rows = 5, cols = 8, padding = 2, brickWidth = (this.canvas.width - padding * (cols + 1)) / cols, brickHeight = 20; for (let c = 0; c < cols; c++) for (let r = 0; r < rows; r++) this.bricks.push({ x: c * (brickWidth + padding) + padding, y: r * (brickHeight + padding) + padding + 30, width: brickWidth, height: brickHeight, visible: true }); },
             update() {
                 if (this.paused || this.gameOver) return;
-                // Smoother paddle movement
                 if (keysPressed['ArrowLeft']) this.paddle.x -= this.paddle.speed;
                 if (keysPressed['ArrowRight']) this.paddle.x += this.paddle.speed;
 
@@ -352,16 +352,16 @@
                 if (this.gameOver) { this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = 'white'; this.ctx.textAlign = 'center'; this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2); }
             },
             gameLoop() { if (!this.paused) { this.update(); this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
-            start() { this.paused = false; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
-            stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; },
-            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) this.start(); }
+            start() { this.paused = false; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); this.music.play();},
+            stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause();},
+            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
         };
 
         // --- DINO RUN ---
         gameInstances.dino = {
-            canvas: document.getElementById('dino-canvas'), ctx: null, dino: {}, obstacles: [], gameSpeed: 5, gravity: 0.6, score: 0, frameCount: 0, paused: false, gameOver: false, loop: null,
+            canvas: document.getElementById('dino-canvas'), music: document.getElementById('dino-music'), ctx: null, dino: {}, obstacles: [], gameSpeed: 5, gravity: 0.6, score: 0, frameCount: 0, paused: false, gameOver: false, loop: null,
             init() { this.ctx = this.canvas.getContext('2d'); this.reset(); window.addEventListener('keydown', this.handleInput.bind(this)); window.addEventListener('keyup', this.handleKeyUp.bind(this)); },
-            reset() { this.dino = { x: 50, y: 0, width: 44, height: 47, dy: 0, jumpPower: 15, grounded: true, isDucking: false, runFrame: 0 }; this.obstacles = []; this.score = 0; this.gameSpeed = 5; this.gameOver = false; this.frameCount = 0; },
+            reset() { this.dino = { x: 50, y: 0, width: 44, height: 47, dy: 0, jumpPower: 15, grounded: true, isDucking: false, runFrame: 0 }; this.obstacles = []; this.score = 0; this.gameSpeed = 5; this.gameOver = false; this.frameCount = 0; this.music.currentTime = 0; },
             handleInput(e) { if (activeGame !== 'dino' || this.paused) return; if ((e.key === ' ' || e.key === 'ArrowUp') && this.dino.grounded) { this.dino.dy = -this.dino.jumpPower; this.dino.grounded = false; } else if (e.key === 'ArrowDown') { this.dino.isDucking = true; } },
             handleKeyUp(e) { if (activeGame !== 'dino' || this.paused) return; if (e.key === 'ArrowDown') { this.dino.isDucking = false; } },
             update() {
@@ -400,18 +400,18 @@
                 if (this.gameOver) { this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = '#f3f4f6'; this.ctx.font = '32px "VT323"'; this.ctx.textAlign = 'center'; this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2); }
             },
             gameLoop() { if (!this.paused) { this.update(); this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
-            start() { this.paused = false; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
-            stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; },
-            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) this.start(); }
+            start() { this.paused = false; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); this.music.play();},
+            stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause();},
+            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
         };
 
         // --- SPACE INVADERS ---
         gameInstances.invaders = {
-            canvas: document.getElementById('invaders-canvas'), ctx: null, player: {}, bullets: [], invaders: [], invaderBullets: [], invaderDirection: 1, invaderSpeed: 0.5, score: 0, paused: false, gameOver: false, loop: null, lastShotTime: 0, shootCooldown: 300,
+            canvas: document.getElementById('invaders-canvas'), music: document.getElementById('invaders-music'), ctx: null, player: {}, bullets: [], invaders: [], invaderBullets: [], invaderDirection: 1, invaderSpeed: 0.5, score: 0, paused: false, gameOver: false, loop: null, lastShotTime: 0, shootCooldown: 300,
             init() { this.ctx = this.canvas.getContext('2d'); },
             reset() {
                 this.player = { x: this.canvas.width / 2 - 25, y: this.canvas.height - 40, width: 50, height: 20, speed: 5 };
-                this.bullets = []; this.invaderBullets = []; this.createInvaders(); this.score = 0; this.gameOver = false;
+                this.bullets = []; this.invaderBullets = []; this.createInvaders(); this.score = 0; this.gameOver = false; this.music.currentTime = 0;
             },
             createInvaders() {
                 this.invaders = []; const rows = 5; const cols = 10;
@@ -457,14 +457,14 @@
                 if (this.gameOver) { this.ctx.fillStyle = 'rgba(255, 0, 0, 0.5)'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = 'white'; this.ctx.textAlign = 'center'; this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2); }
             },
             gameLoop() { if (!this.paused) { this.update(); this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
-            start() { this.paused = false; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
-            stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; },
-            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) this.start(); }
+            start() { this.paused = false; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); this.music.play();},
+            stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause();},
+            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
         };
 
         // --- TETRIS ---
         gameInstances.tetris = {
-            canvas: document.getElementById('tetris-canvas'), ctx: null, grid: [], score: 0, gameOver: false, paused: false, loop: null, dropCounter: 0, dropInterval: 1000, lastTime: 0, cols: 12, rows: 20, blockSize: 0,
+            canvas: document.getElementById('tetris-canvas'), music: document.getElementById('tetris-music'), ctx: null, grid: [], score: 0, gameOver: false, paused: false, loop: null, dropCounter: 0, dropInterval: 1000, lastTime: 0, cols: 12, rows: 20, blockSize: 0,
             player: { pos: { x: 0, y: 0 }, matrix: null, score: 0 },
             colors: [null, '#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#06b6d4', '#8b5cf6'],
             init() { this.ctx = this.canvas.getContext('2d'); window.addEventListener('keydown', this.handleInput.bind(this)); },
@@ -477,6 +477,7 @@
                 this.gameOver = false;
                 this.paused = true; // Start paused
                 this.playerReset();
+                this.music.currentTime = 0;
             },
             createMatrix(w, h) { const matrix = []; while (h--) { matrix.push(new Array(w).fill(0)); } return matrix; },
             createPiece(type) { if (type === 'T') return [[0, 0, 0], [1, 1, 1], [0, 1, 0]]; else if (type === 'O') return [[2, 2], [2, 2]]; else if (type === 'L') return [[0, 3, 0], [0, 3, 0], [0, 3, 3]]; else if (type === 'J') return [[0, 4, 0], [0, 4, 0], [4, 4, 0]]; else if (type === 'I') return [[0, 5, 0, 0], [0, 5, 0, 0], [0, 5, 0, 0], [0, 5, 0, 0]]; else if (type === 'S') return [[0, 6, 6], [6, 6, 0], [0, 0, 0]]; else if (type === 'Z') return [[7, 7, 0], [0, 7, 7], [0, 0, 0]]; },
@@ -505,9 +506,10 @@
                 this.dropCounter = 0;
                 if(this.loop) cancelAnimationFrame(this.loop); 
                 this.loop = requestAnimationFrame(this.gameLoop.bind(this)); 
+                this.music.play();
             },
-            stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; },
-            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) this.start(); }
+            stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause();},
+            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
         };
 
         // --- MAIN EVENT LISTENER ---
