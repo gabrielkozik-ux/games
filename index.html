@@ -95,6 +95,24 @@
         #btn-down { grid-column: 2; grid-row: 2; }
         #btn-right { grid-column: 3; grid-row: 2; }
         
+        #mute-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 200;
+            background: rgba(0,0,0,0.4);
+            color: white;
+            border: 2px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
         @media (max-width: 768px) {
             #touch-controls {
                 display: flex;
@@ -103,6 +121,9 @@
     </style>
 </head>
 <body class="bg-gray-800 text-white p-4 sm:p-8 flex flex-col min-h-screen noselect">
+
+    <button id="mute-button">🔊</button>
+
     <header class="text-center mb-4 sm:mb-8">
         <h1 class="text-4xl md:text-6xl font-bungee tracking-wider">Retro Herní Arkáda</h1>
         <p class="text-gray-300 mt-2 font-vt323 text-xl">Klikni na hru pro spuštění / pauzu</p>
@@ -203,12 +224,23 @@
         let activeGame = null;
         const gameInstances = {};
         const keysPressed = {};
+        let isMuted = false;
+
+        const allAudio = document.querySelectorAll('audio');
+        const muteButton = document.getElementById('mute-button');
         const gameOverSound = document.getElementById('game-over-sound');
         const readyFightSound = document.getElementById('ready-fight-sound');
         const victorySound = document.getElementById('victory-sound');
 
+        muteButton.addEventListener('click', () => {
+            isMuted = !isMuted;
+            allAudio.forEach(audio => {
+                audio.muted = isMuted;
+            });
+            muteButton.textContent = isMuted ? '🔇' : '🔊';
+        });
+
         window.addEventListener('keydown', (e) => { 
-            // Zabrání pauznutí hry při stisku mezerníku (který by jinak simuloval kliknutí na aktivní <button>)
             if (e.key === ' ' && activeGame) {
                 e.preventDefault();
             }
@@ -273,19 +305,11 @@
         gameInstances.pong = {
             canvas: document.getElementById('pong-canvas'), music: document.getElementById('pong-music'), ctx: null, ball: {}, player: {}, ai: {}, paddleWidth: 0, paddleHeight: 0, paused: false, loop: null, maxScore: 10, gameOver: false, gameWon: false,
             init() { this.ctx = this.canvas.getContext('2d'); },
-            reset() {
-                this.paddleWidth = this.canvas.width / 80; this.paddleHeight = this.canvas.height / 6;
-                this.ball = { x: this.canvas.width / 2, y: this.canvas.height / 2, size: this.canvas.width / 100, dx: 5, dy: 5 };
-                this.player = { x: 10, y: this.canvas.height / 2 - this.paddleHeight / 2, width: this.paddleWidth, height: this.paddleHeight, score: 0, speed: 8 };
-                this.ai = { x: this.canvas.width - 10 - this.paddleWidth, y: this.canvas.height / 2 - this.paddleHeight / 2, width: this.paddleWidth, height: this.paddleHeight, score: 0, speed: 4 };
-                this.gameOver = false; this.gameWon = false; this.music.currentTime = 0;
-            },
+            reset() { this.paddleWidth = this.canvas.width / 80; this.paddleHeight = this.canvas.height / 6; this.ball = { x: this.canvas.width / 2, y: this.canvas.height / 2, size: this.canvas.width / 100, dx: 5, dy: 5 }; this.player = { x: 10, y: this.canvas.height / 2 - this.paddleHeight / 2, width: this.paddleWidth, height: this.paddleHeight, score: 0, speed: 8 }; this.ai = { x: this.canvas.width - 10 - this.paddleWidth, y: this.canvas.height / 2 - this.paddleHeight / 2, width: this.paddleWidth, height: this.paddleHeight, score: 0, speed: 4 }; this.gameOver = false; this.gameWon = false; this.music.currentTime = 0; },
             update() {
                 if (this.paused || this.gameOver || this.gameWon) return;
-                if (keysPressed['ArrowUp']) this.player.y -= this.player.speed;
-                if (keysPressed['ArrowDown']) this.player.y += this.player.speed;
-                if (this.player.y < 0) this.player.y = 0;
-                if (this.player.y + this.player.height > this.canvas.height) this.player.y = this.canvas.height - this.player.height;
+                if (keysPressed['ArrowUp']) this.player.y -= this.player.speed; if (keysPressed['ArrowDown']) this.player.y += this.player.speed;
+                if (this.player.y < 0) this.player.y = 0; if (this.player.y + this.player.height > this.canvas.height) this.player.y = this.canvas.height - this.player.height;
                 this.ball.x += this.ball.dx; this.ball.y += this.ball.dy;
                 if (this.ball.y + this.ball.size > this.canvas.height || this.ball.y - this.ball.size < 0) this.ball.dy *= -1;
                 if (this.ball.x - this.ball.size < this.player.x + this.player.width && this.ball.x > this.player.x && this.ball.y > this.player.y && this.ball.y < this.player.y + this.player.height) this.ball.dx *= -1.1;
@@ -318,15 +342,9 @@
         gameInstances.breakout = {
             canvas: document.getElementById('breakout-canvas'), music: document.getElementById('breakout-music'), ctx: null, paddle: {}, balls: [], bricks: [], powerUps: [], score: 0, lives: 3, paused: false, gameOver: false, loop: null,
             init() { this.ctx = this.canvas.getContext('2d'); },
-            reset() {
-                this.paddle = { x: this.canvas.width / 2 - 50, y: this.canvas.height - 20, width: 100, height: 10, speed: 10 };
-                this.balls = [{ x: this.canvas.width / 2, y: this.canvas.height - 30, size: 7, dx: 4, dy: -4 }];
-                this.powerUps = []; this.createBricks(); this.score = 0; this.lives = 3; this.gameOver = false; this.music.currentTime = 0;
-            },
+            reset() { this.paddle = { x: this.canvas.width / 2 - 50, y: this.canvas.height - 20, width: 100, height: 10, speed: 10 }; this.balls = [{ x: this.canvas.width / 2, y: this.canvas.height - 30, size: 7, dx: 4, dy: -4 }]; this.powerUps = []; this.createBricks(); this.score = 0; this.lives = 3; this.gameOver = false; this.music.currentTime = 0; },
             createBricks() { this.bricks = []; const rows = 5, cols = 8, padding = 2, brickWidth = (this.canvas.width - padding * (cols + 1)) / cols, brickHeight = 20; for (let c = 0; c < cols; c++) for (let r = 0; r < rows; r++) this.bricks.push({ x: c * (brickWidth + padding) + padding, y: r * (brickHeight + padding) + padding + 30, width: brickWidth, height: brickHeight, visible: true }); },
-            spawnPowerUp(x, y) {
-                if (Math.random() < 0.2) { const type = Math.random() < 0.5 ? 'widePaddle' : 'multiBall'; this.powerUps.push({ x, y, size: 10, dy: 2, type }); }
-            },
+            spawnPowerUp(x, y) { if (Math.random() < 0.2) { const type = Math.random() < 0.5 ? 'widePaddle' : 'multiBall'; this.powerUps.push({ x, y, size: 10, dy: 2, type }); } },
             update() {
                 if (this.paused || this.gameOver) return;
                 if (keysPressed['ArrowLeft']) this.paddle.x -= this.paddle.speed; if (keysPressed['ArrowRight']) this.paddle.x += this.paddle.speed;
@@ -340,15 +358,7 @@
                     if (ball.y + ball.size > this.paddle.y && ball.x > this.paddle.x && ball.x < this.paddle.x + this.paddle.width) { ball.dy *= -1.02; }
                     this.bricks.forEach(brick => { if (brick.visible && ball.x > brick.x && ball.x < brick.x + brick.width && ball.y > brick.y && ball.y < brick.y + brick.height) { brick.visible = false; ball.dy *= -1; this.score++; this.spawnPowerUp(brick.x + brick.width / 2, brick.y + brick.height / 2); } });
                 }
-                this.powerUps.forEach((p, i) => {
-                    p.y += p.dy;
-                    if (p.y > this.canvas.height) this.powerUps.splice(i, 1);
-                    if (p.x > this.paddle.x && p.x < this.paddle.x + this.paddle.width && p.y > this.paddle.y && p.y < this.paddle.y + this.paddle.height) {
-                        if (p.type === 'widePaddle') this.paddle.width = 150;
-                        if (p.type === 'multiBall') this.balls.push({ x: this.paddle.x + this.paddle.width / 2, y: this.paddle.y - 10, size: 7, dx: (Math.random() - 0.5) * 8, dy: -4 });
-                        this.powerUps.splice(i, 1);
-                    }
-                });
+                this.powerUps.forEach((p, i) => { p.y += p.dy; if (p.y > this.canvas.height) this.powerUps.splice(i, 1); if (p.x > this.paddle.x && p.x < this.paddle.x + this.paddle.width && p.y > this.paddle.y && p.y < this.paddle.y + this.paddle.height) { if (p.type === 'widePaddle') this.paddle.width = 150; if (p.type === 'multiBall') this.balls.push({ x: this.paddle.x + this.paddle.width / 2, y: this.paddle.y - 10, size: 7, dx: (Math.random() - 0.5) * 8, dy: -4 }); this.powerUps.splice(i, 1); } });
                 if (this.bricks.every(b => !b.visible)) { this.createBricks(); this.balls.push({ x: this.canvas.width / 2, y: this.canvas.height / 2, size: 7, dx: 4, dy: -4 }); }
             },
             draw() {
@@ -386,12 +396,62 @@
         };
         // --- SPACE INVADERS ---
         gameInstances.invaders = {
-            canvas: document.getElementById('invaders-canvas'), music: document.getElementById('invaders-music'), ctx: null, player: {}, bullets: [], invaders: [], invaderBullets: [], invaderDirection: 1, invaderSpeed: 0.5, score: 0, paused: false, gameOver: false, loop: null, lastShotTime: 0, shootCooldown: 300,
+            canvas: document.getElementById('invaders-canvas'), music: document.getElementById('invaders-music'), ctx: null, player: {}, bullets: [], invaders: [], invaderBullets: [], invaderDirection: 1, invaderSpeed: 0.5, score: 0, lives: 3, paused: false, gameOver: false, loop: null, lastShotTime: 0, shootCooldown: 300,
             init() { this.ctx = this.canvas.getContext('2d'); },
-            reset() { this.player = { x: this.canvas.width / 2 - 25, y: this.canvas.height - 40, width: 50, height: 20, speed: 5 }; this.bullets = []; this.invaderBullets = []; this.createInvaders(); this.score = 0; this.gameOver = false; this.music.currentTime = 0; },
-            createInvaders() { this.invaders = []; const rows = 5; const cols = 10; const invaderWidth = this.canvas.width / 25; const invaderHeight = invaderWidth * 0.8; const invaderPadding = invaderWidth / 2; const totalRowWidth = cols * (invaderWidth + invaderPadding) - invaderPadding; const startX = (this.canvas.width - totalRowWidth) / 2; const startY = 30; for (let r = 0; r < rows; r++) { for (let c = 0; c < cols; c++) { this.invaders.push({ x: startX + c * (invaderWidth + invaderPadding), y: startY + r * (invaderHeight + invaderPadding), width: invaderWidth, height: invaderHeight }); } } },
-            update() { if (this.paused || this.gameOver) return; if (keysPressed['ArrowLeft'] && this.player.x > 0) this.player.x -= this.player.speed; if (keysPressed['ArrowRight'] && this.player.x + this.player.width < this.canvas.width) this.player.x += this.player.speed; if (keysPressed[' '] && Date.now() - this.lastShotTime > this.shootCooldown) { this.bullets.push({ x: this.player.x + this.player.width / 2 - 2.5, y: this.player.y, width: 5, height: 10, dy: -7 }); this.lastShotTime = Date.now(); } this.bullets.forEach((b, i) => { b.y += b.dy; if (b.y < 0) this.bullets.splice(i, 1); }); this.invaderBullets.forEach((b, i) => { b.y += b.dy; if (b.y > this.canvas.height) this.invaderBullets.splice(i, 1); if(b.x > this.player.x && b.x < this.player.x+this.player.width && b.y > this.player.y && b.y < this.player.y + this.player.height) { this.gameOver = true; playGameOverSound(); } }); let edgeReached = false; this.invaders.forEach(inv => { inv.x += this.invaderSpeed * this.invaderDirection; if (inv.x <= 0 || inv.x + inv.width >= this.canvas.width) edgeReached = true; if (inv.y + inv.height > this.player.y) { this.gameOver = true; playGameOverSound(); } }); if (edgeReached) { this.invaderDirection *= -1; this.invaders.forEach(inv => inv.y += 20); } if (Math.random() < 0.02 && this.invaders.length > 0) { const shooter = this.invaders[Math.floor(Math.random() * this.invaders.length)]; this.invaderBullets.push({ x: shooter.x + shooter.width / 2, y: shooter.y + shooter.height, width: 3, height: 7, dy: 4 }); } this.bullets.forEach((bullet, bIndex) => { this.invaders.forEach((invader, iIndex) => { if (bullet.x > invader.x && bullet.x < invader.x + invader.width && bullet.y > invader.y && bullet.y < invader.y + invader.height) { this.invaders.splice(iIndex, 1); this.bullets.splice(bIndex, 1); this.score += 10; } }); }); if (this.invaders.length === 0) { this.createInvaders(); this.invaderSpeed += 0.2; } },
-            draw() { this.ctx.fillStyle = '#000'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = '#0f0'; this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height); this.ctx.fillStyle = '#fff'; this.bullets.forEach(b => this.ctx.fillRect(b.x, b.y, b.width, b.height)); this.ctx.fillStyle = '#f00'; this.invaderBullets.forEach(b => this.ctx.fillRect(b.x, b.y, b.width, b.height)); this.ctx.fillStyle = '#fff'; this.invaders.forEach(inv => this.ctx.fillRect(inv.x, inv.y, inv.width, inv.height)); this.ctx.fillStyle = '#fff'; this.ctx.font = '20px "Press Start 2P"'; this.ctx.fillText(`Score: ${this.score}`, 10, 25); if (this.gameOver) { this.ctx.fillStyle = 'rgba(255, 0, 0, 0.5)'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = 'white'; this.ctx.textAlign = 'center'; this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2); } },
+            reset() {
+                this.player = { x: this.canvas.width / 2 - 25, y: this.canvas.height - 40, width: 50, height: 20, speed: 5 };
+                this.bullets = []; this.invaderBullets = []; this.createInvaders(); this.score = 0; this.lives = 3; this.gameOver = false; this.music.currentTime = 0;
+            },
+            createInvaders() {
+                this.invaders = []; const rows = 5; const cols = 10;
+                const invaderWidth = this.canvas.width / 25; const invaderHeight = invaderWidth * 0.8;
+                const invaderPadding = invaderWidth / 2; const totalRowWidth = cols * (invaderWidth + invaderPadding) - invaderPadding;
+                const startX = (this.canvas.width - totalRowWidth) / 2; const startY = 30;
+                for (let r = 0; r < rows; r++) { for (let c = 0; c < cols; c++) { this.invaders.push({ x: startX + c * (invaderWidth + invaderPadding), y: startY + r * (invaderHeight + invaderPadding), width: invaderWidth, height: invaderHeight }); } }
+            },
+            update() {
+                if (this.paused || this.gameOver) return;
+                if (keysPressed['ArrowLeft'] && this.player.x > 0) this.player.x -= this.player.speed;
+                if (keysPressed['ArrowRight'] && this.player.x + this.player.width < this.canvas.width) this.player.x += this.player.speed;
+                if (keysPressed[' '] && Date.now() - this.lastShotTime > this.shootCooldown) {
+                    this.bullets.push({ x: this.player.x + this.player.width / 2 - 2.5, y: this.player.y, width: 5, height: 10, dy: -7 });
+                    this.lastShotTime = Date.now();
+                }
+                this.bullets.forEach((b, i) => { b.y += b.dy; if (b.y < 0) this.bullets.splice(i, 1); });
+                this.invaderBullets.forEach((b, i) => {
+                    b.y += b.dy;
+                    if (b.y > this.canvas.height) this.invaderBullets.splice(i, 1);
+                    if(b.x > this.player.x && b.x < this.player.x+this.player.width && b.y > this.player.y && b.y < this.player.y + this.player.height) {
+                        this.invaderBullets.splice(i, 1);
+                        this.lives--;
+                        this.player.x = this.canvas.width / 2 - 25; // Reset player position
+                        if (this.lives <= 0) {
+                            this.gameOver = true; playGameOverSound();
+                        }
+                    }
+                });
+                let edgeReached = false;
+                this.invaders.forEach(inv => {
+                    inv.x += this.invaderSpeed * this.invaderDirection;
+                    if (inv.x <= 0 || inv.x + inv.width >= this.canvas.width) edgeReached = true;
+                    if (inv.y + inv.height > this.player.y) { this.gameOver = true; playGameOverSound(); }
+                });
+                if (edgeReached) { this.invaderDirection *= -1; this.invaders.forEach(inv => inv.y += 20); }
+                if (Math.random() < 0.02 && this.invaders.length > 0) { const shooter = this.invaders[Math.floor(Math.random() * this.invaders.length)]; this.invaderBullets.push({ x: shooter.x + shooter.width / 2, y: shooter.y + shooter.height, width: 3, height: 7, dy: 4 }); }
+                this.bullets.forEach((bullet, bIndex) => { this.invaders.forEach((invader, iIndex) => { if (bullet.x > invader.x && bullet.x < invader.x + invader.width && bullet.y > invader.y && bullet.y < invader.y + invader.height) { this.invaders.splice(iIndex, 1); this.bullets.splice(bIndex, 1); this.score += 10; } }); });
+                if (this.invaders.length === 0) { this.createInvaders(); this.invaderSpeed += 0.2; }
+            },
+            draw() {
+                this.ctx.fillStyle = '#000'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.fillStyle = '#0f0'; this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
+                this.ctx.fillStyle = '#fff'; this.bullets.forEach(b => this.ctx.fillRect(b.x, b.y, b.width, b.height));
+                this.ctx.fillStyle = '#f00'; this.invaderBullets.forEach(b => this.ctx.fillRect(b.x, b.y, b.width, b.height));
+                this.ctx.fillStyle = '#fff'; this.invaders.forEach(inv => this.ctx.fillRect(inv.x, inv.y, inv.width, inv.height));
+                this.ctx.fillStyle = '#fff'; this.ctx.font = '20px "Press Start 2P"';
+                this.ctx.textAlign = 'left'; this.ctx.fillText(`Score: ${this.score}`, 10, 25);
+                this.ctx.textAlign = 'right'; this.ctx.fillText(`Lives: ${this.lives}`, this.canvas.width - 10, 25);
+                if (this.gameOver) { this.ctx.fillStyle = 'rgba(255, 0, 0, 0.5)'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = 'white'; this.ctx.textAlign = 'center'; this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2); }
+            },
             gameLoop() { if (!this.paused) { this.update(); this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
             start() { this.paused = false; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); this.music.play(); },
             stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause(); document.body.style.overflow = 'auto';},
@@ -422,8 +482,7 @@
             playerReset() {
                 this.player.matrix = this.nextPiece;
                 this.nextPiece = this.createPiece(this.pieces[Math.floor(Math.random() * this.pieces.length)]);
-                this.player.pos.y = 0;
-                this.player.pos.x = (this.cols / 2 | 0) - (this.player.matrix[0].length / 2 | 0);
+                this.player.pos.y = 0; this.player.pos.x = (this.cols / 2 | 0) - (this.player.matrix[0].length / 2 | 0);
                 if (this.collide(this.grid, this.player)) { this.gameOver = true; playGameOverSound(); }
             },
             collide(grid, player) { const [m, o] = [player.matrix, player.pos]; for (let y = 0; y < m.length; ++y) { for (let x = 0; x < m[y].length; ++x) { if (m[y][x] !== 0 && (grid[y + o.y] && grid[y + o.y][x + o.x]) !== 0) return true; } } return false; },
