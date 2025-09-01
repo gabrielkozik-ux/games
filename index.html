@@ -3,25 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="description" content="Zahrajte si klasické retro hry jako Snake, Pong, Tetris a další přímo ve vašem prohlížeči. Arkáda plná nostalgické zábavy.">
-    <title>Retro Herní Arkáda</title>
+    <meta name="description" content="Zahrajte si klasické retro hry jako Snake, Pong, Tetris a další přímo ve vašem prohlížeči. Arkáda plná nostalgické zábavy určená pro mobilní telefony.">
+    <title>Retro Herní Arkáda (Pro mobil)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Silkscreen&family=Bungee&display=swap" rel="stylesheet">
     <style>
-        /* Custom fonts for games */
+        /* Základní styly zůstávají stejné */
         body {
             font-family: 'Inter', sans-serif;
             transition: overflow 0.3s ease;
-            overflow: auto; /* Ensure scrollbar is visible by default */
+            overflow: auto;
         }
         .font-press-start { font-family: 'Press Start 2P', cursive; }
         .font-vt323 { font-family: 'VT323', monospace; }
         .font-silkscreen { font-family: 'Silkscreen', cursive; }
         .font-bungee { font-family: 'Bungee', cursive; }
 
-        /* Game window styles */
         .game-window {
             aspect-ratio: 4 / 3;
             transition: all 0.3s ease-in-out;
@@ -33,205 +32,158 @@
             border: 4px solid #1f2937;
             box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2), 0 4px 6px -2px rgba(0,0,0,0.1);
             position: relative;
-            /* Optimalizace: Reset pro <button> element */
             background: none;
             padding: 0;
             text-align: inherit;
         }
-        /* Optimalizace: Vizuální zpětná vazba pro interaktivitu */
         .game-window:hover {
             transform: scale(1.03);
             box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3), 0 10px 10px -5px rgba(0,0,0,0.2);
         }
-        /* Optimalizace: Zvýraznění pro ovládání klávesnicí */
         .game-window:focus-visible {
-            outline: 4px solid #facc15; /* Bright yellow outline */
+            outline: 4px solid #facc15;
             outline-offset: 4px;
         }
 
-        .game-window h2 {
-            transition: opacity 0.3s ease;
-        }
-        .game-window canvas {
-            display: none; /* Canvases are hidden by default */
-            width: 100%;
-            height: 100%;
-        }
-        .game-window.active h2 {
-            display: none;
-        }
-        .game-window.active canvas {
-            display: block;
-        }
+        .game-window h2 { transition: opacity 0.3s ease; }
+        .game-window canvas { display: none; width: 100%; height: 100%; }
+        .game-window.active h2 { display: none; }
+        .game-window.active canvas { display: block; }
+
         .countdown-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 10rem;
-            color: white;
-            -webkit-text-stroke: 4px black;
-            text-stroke: 4px black;
-            z-index: 10;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.2s ease-in-out;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 10rem; color: white; -webkit-text-stroke: 4px black; text-stroke: 4px black;
+            z-index: 10; pointer-events: none; opacity: 0; transition: opacity 0.2s ease-in-out;
         }
         
-        /* Thematic backgrounds */
         #snake-window { background-color: #a3e635; }
         #pong-window { background-color: #60a5fa; }
         #breakout-window { background-color: #facc15; }
         #dino-window { background-color: #d1d5db; }
-        #invaders-window { background-color: #4c1d95; } /* Deep purple */
-        #tetris-window { background-color: #fca5a5; } /* Light red */
+        #invaders-window { background-color: #4c1d95; }
+        #tetris-window { background-color: #fca5a5; }
 
-
-        /* Prevent text selection */
         .noselect {
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            -khtml-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
+            -webkit-touch-callout: none; -webkit-user-select: none;
+            -khtml-user-select: none; -moz-user-select: none;
+            -ms-user-select: none; user-select: none;
         }
 
-        /* --- STYLY PRO DOTYKOVÉ OVLÁDÁNÍ --- */
         #touch-controls {
-            display: none; /* Skryto na desktopu */
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            padding: 20px;
-            box-sizing: border-box;
-            z-index: 100;
-            opacity: 0.7;
-            justify-content: space-between;
-            align-items: flex-end;
+            display: flex; /* Na mobilu je vždy flex */
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            padding: 20px; box-sizing: border-box; z-index: 100;
+            opacity: 0.7; justify-content: space-between; align-items: flex-end;
         }
 
         #d-pad {
-            display: grid;
-            grid-template-columns: repeat(3, 60px);
-            grid-template-rows: repeat(2, 60px);
-            grid-gap: 15px;
+            display: grid; grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(2, 60px); grid-gap: 15px;
         }
-        
-        #action-button {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
+        #action-button { display: flex; justify-content: center; align-items: center; }
         #touch-controls button {
-            width: 60px;
-            height: 60px;
-            font-size: 24px;
-            border: 3px solid #1f2937;
-            background-color: rgba(255, 255, 255, 0.6);
-            border-radius: 50%; /* Kulatá tlačítka */
-            color: #1f2937;
-            font-family: 'Press Start 2P', cursive;
+            width: 60px; height: 60px; font-size: 24px;
+            border: 3px solid #1f2937; background-color: rgba(255, 255, 255, 0.6);
+            border-radius: 50%; color: #1f2937; font-family: 'Press Start 2P', cursive;
         }
-        
-        #btn-action {
-             width: 80px;
-             height: 80px;
-             font-size: 32px;
-        }
-
-        /* Umístění tlačítek v D-Padu */
+        #btn-action { width: 80px; height: 80px; font-size: 32px; }
         #btn-left { grid-column: 1; grid-row: 2; }
         #btn-up { grid-column: 2; grid-row: 1; }
         #btn-down { grid-column: 2; grid-row: 2; }
         #btn-right { grid-column: 3; grid-row: 2; }
-        
-        /* Zobrazit ovládání pouze na dotykových zařízeních (mobilech/tabletech) */
-        @media (max-width: 768px) {
-            #touch-controls {
-                display: flex;
-            }
+
+        /* Styly pro zprávu na desktopu */
+        #desktop-message {
+            display: none; /* Defaultně skryto */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            height: 100vh;
         }
     </style>
 </head>
 <body class="bg-gray-800 text-white p-4 sm:p-8 flex flex-col min-h-screen noselect">
-    <header class="text-center mb-4 sm:mb-8">
-        <h1 class="text-4xl md:text-6xl font-bungee tracking-wider">Retro Herní Arkáda</h1>
-        <p class="text-gray-300 mt-2 font-vt323 text-xl">Klikni na hru pro spuštění / pauzu</p>
-        <p class="text-gray-400 mt-4 font-vt323 text-lg">Příjemnou zábavu ti přeje Gabriel</p>
-    </header>
 
-    <main class="flex-grow grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
-        <button id="snake-window" class="game-window" data-game="snake">
-            <h2 class="text-4xl md:text-5xl font-press-start text-gray-900">SNAKE</h2>
-            <canvas id="snake-canvas"></canvas>
-            <div class="countdown-overlay font-press-start"></div>
-        </button>
-
-        <button id="pong-window" class="game-window" data-game="pong">
-            <h2 class="text-4xl md:text-5xl font-silkscreen text-gray-900">PONG</h2>
-            <canvas id="pong-canvas"></canvas>
-            <div class="countdown-overlay font-silkscreen"></div>
-        </button>
-
-        <button id="breakout-window" class="game-window" data-game="breakout">
-            <h2 class="text-4xl md:text-5xl font-bungee text-gray-900">BREAKOUT</h2>
-            <canvas id="breakout-canvas"></canvas>
-            <div class="countdown-overlay font-bungee"></div>
-        </button>
-        
-        <button id="dino-window" class="game-window" data-game="dino">
-            <h2 class="text-4xl md:text-5xl font-vt323 text-gray-900">DINO RUN</h2>
-            <canvas id="dino-canvas"></canvas>
-            <div class="countdown-overlay font-vt323"></div>
-        </button>
-
-        <button id="invaders-window" class="game-window" data-game="invaders">
-            <h2 class="text-4xl md:text-5xl font-press-start text-white text-center">SPACE INVADERS</h2>
-            <canvas id="invaders-canvas"></canvas>
-            <div class="countdown-overlay font-press-start"></div>
-        </button>
-
-        <button id="tetris-window" class="game-window" data-game="tetris">
-            <h2 class="text-4xl md:text-5xl font-silkscreen text-gray-900">TETRIS</h2>
-            <canvas id="tetris-canvas"></canvas>
-            <div class="countdown-overlay font-silkscreen"></div>
-        </button>
-    </main>
-
-    <div id="touch-controls">
-        <div id="d-pad">
-            <button id="btn-left">◄</button>
-            <button id="btn-up">▲</button>
-            <button id="btn-down">▼</button>
-            <button id="btn-right">►</button>
+    <div id="desktop-message">
+        <h1 class="text-5xl font-bungee">Otevři na mobilu!</h1>
+        <p class="text-gray-300 mt-4 font-vt323 text-2xl">Tato herní arkáda je optimalizována pro dotykové ovládání.</p>
+        <p class="text-gray-400 mt-2 font-vt323 text-xl">Naskenuj QR kód nebo otevři stránku na svém telefonu.</p>
         </div>
-        <div id="action-button">
-            <button id="btn-action">A</button>
+
+    <div id="mobile-content" style="display: none;">
+        <header class="text-center mb-4 sm:mb-8">
+            <h1 class="text-4xl md:text-6xl font-bungee tracking-wider">Retro Herní Arkáda</h1>
+            <p class="text-gray-300 mt-2 font-vt323 text-xl">Klikni na hru pro spuštění / pauzu</p>
+            <p class="text-gray-400 mt-4 font-vt323 text-lg">Příjemnou zábavu ti přeje Gabriel</p>
+        </header>
+
+        <main class="flex-grow grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
+            <button id="snake-window" class="game-window" data-game="snake">
+                <h2 class="text-4xl md:text-5xl font-press-start text-gray-900">SNAKE</h2>
+                <canvas id="snake-canvas"></canvas>
+                <div class="countdown-overlay font-press-start"></div>
+            </button>
+
+            <button id="pong-window" class="game-window" data-game="pong">
+                <h2 class="text-4xl md:text-5xl font-silkscreen text-gray-900">PONG</h2>
+                <canvas id="pong-canvas"></canvas>
+                <div class="countdown-overlay font-silkscreen"></div>
+            </button>
+
+            <button id="breakout-window" class="game-window" data-game="breakout">
+                <h2 class="text-4xl md:text-5xl font-bungee text-gray-900">BREAKOUT</h2>
+                <canvas id="breakout-canvas"></canvas>
+                <div class="countdown-overlay font-bungee"></div>
+            </button>
+            
+            <button id="dino-window" class="game-window" data-game="dino">
+                <h2 class="text-4xl md:text-5xl font-vt323 text-gray-900">DINO RUN</h2>
+                <canvas id="dino-canvas"></canvas>
+                <div class="countdown-overlay font-vt323"></div>
+            </button>
+
+            <button id="invaders-window" class="game-window" data-game="invaders">
+                <h2 class="text-4xl md:text-5xl font-press-start text-white text-center">SPACE INVADERS</h2>
+                <canvas id="invaders-canvas"></canvas>
+                <div class="countdown-overlay font-press-start"></div>
+            </button>
+
+            <button id="tetris-window" class="game-window" data-game="tetris">
+                <h2 class="text-4xl md:text-5xl font-silkscreen text-gray-900">TETRIS</h2>
+                <canvas id="tetris-canvas"></canvas>
+                <div class="countdown-overlay font-silkscreen"></div>
+            </button>
+        </main>
+
+        <div id="touch-controls">
+            <div id="d-pad">
+                <button id="btn-left">◄</button>
+                <button id="btn-up">▲</button>
+                <button id="btn-down">▼</button>
+                <button id="btn-right">►</button>
+            </div>
+            <div id="action-button">
+                <button id="btn-action">A</button>
+            </div>
         </div>
+
+        <footer class="mt-8 pt-6 border-t border-gray-700 text-center">
+            <div class="flex flex-col md:flex-row items-center justify-center gap-6">
+                <div class="text-left">
+                    <h3 class="font-bungee text-2xl text-yellow-400">Líbí se ti hry?</h3>
+                    <p class="text-gray-400 font-vt323 text-lg">Můžeš mi poděkovat koupí lahodné kávy.</p>
+                    <a href="https://buymeacoffee.com/gaboslovak" target="_blank" class="mt-2 inline-block bg-yellow-400 text-gray-900 font-bold py-2 px-4 rounded-lg hover:bg-yellow-300 transition-colors font-sans">
+                        buymeacoffee.com/gaboslovak
+                    </a>
+                </div>
+                <div>
+                    <img src="bmc_qr.png" alt="QR kód pro Buy Me a Coffee" class="w-32 h-32 rounded-lg border-4 border-gray-600" width="128" height="128">
+                </div>
+            </div>
+        </footer>
     </div>
-
-
-    <footer class="mt-8 pt-6 border-t border-gray-700 text-center">
-        <div class="flex flex-col md:flex-row items-center justify-center gap-6">
-            <div class="text-left">
-                <h3 class="font-bungee text-2xl text-yellow-400">Líbí se ti hry?</h3>
-                <p class="text-gray-400 font-vt323 text-lg">Můžeš mi poděkovat koupí lahodné kávy.</p>
-                <a href="https://buymeacoffee.com/gaboslovak" target="_blank" class="mt-2 inline-block bg-yellow-400 text-gray-900 font-bold py-2 px-4 rounded-lg hover:bg-yellow-300 transition-colors font-sans">
-                    buymeacoffee.com/gaboslovak
-                </a>
-            </div>
-            <div>
-                <img src="bmc_qr.png" alt="QR kód pro Buy Me a Coffee" class="w-32 h-32 rounded-lg border-4 border-gray-600" width="128" height="128">
-            </div>
-        </div>
-    </footer>
     
     <audio id="snake-music" loop><source src="hadi-tanec.mp3" type="audio/mpeg"></audio>
     <audio id="pong-music" loop><source src="pong.mp3" type="audio/mpeg"></audio>
@@ -244,31 +196,38 @@
     <audio id="ready-fight-sound"><source src="ready-fight.mp3" type="audio/mpeg"></audio>
 
     <script>
+        (function() {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+                document.getElementById('mobile-content').style.display = 'block';
+            } else {
+                document.getElementById('desktop-message').style.display = 'flex';
+            }
+        })();
+    </script>
+    
+    <script>
+        // SKRIPT PRO DOTYKOVÉ OVLÁDÁNÍ
         document.addEventListener('DOMContentLoaded', () => {
             function simulateKeyEvent(type, key) {
-                // Vytvoří a odešle událost stisku klávesy, aby ji herní logika zachytila
                 const event = new KeyboardEvent(type, { 'key': key, 'bubbles': true });
                 window.dispatchEvent(event);
             }
 
             const touchControls = {
-                'btn-left': 'ArrowLeft',
-                'btn-right': 'ArrowRight',
-                'btn-up': 'ArrowUp',
-                'btn-down': 'ArrowDown',
-                'btn-action': ' ' // Mezerník pro akce (skok, střelba)
+                'btn-left': 'ArrowLeft', 'btn-right': 'ArrowRight',
+                'btn-up': 'ArrowUp', 'btn-down': 'ArrowDown',
+                'btn-action': ' '
             };
 
             for (const [btnId, key] of Object.entries(touchControls)) {
                 const button = document.getElementById(btnId);
                 if (button) {
-                    // Při dotyku prstu simuluje stisk klávesy
                     button.addEventListener('touchstart', (e) => {
                         e.preventDefault();
                         simulateKeyEvent('keydown', key);
                     }, { passive: false });
-
-                    // Při zvednutí prstu simuluje uvolnění klávesy
                     button.addEventListener('touchend', (e) => {
                         e.preventDefault();
                         simulateKeyEvent('keyup', key);
@@ -276,10 +235,8 @@
                 }
             }
         });
-    </script>
 
-
-    <script>
+        // VEŠKERÁ HERNÍ LOGIKA (zůstává beze změny)
         // --- GLOBAL GAME CONTROLLER ---
         let activeGame = null;
         const gameInstances = {};
@@ -293,30 +250,25 @@
         
         // --- GLOBAL FUNCTION for Game Over Sound ---
         function playGameOverSound() {
-            // Stop any active game music
             if (activeGame && gameInstances[activeGame].music) {
                 gameInstances[activeGame].music.pause();
                 gameInstances[activeGame].music.currentTime = 0;
             }
             gameOverSound.currentTime = 0;
             gameOverSound.play();
-            // Optimalizace: Vždy obnovit scrollbar po skončení hry
             document.body.style.overflow = 'auto';
         }
 
         // --- GLOBAL FUNCTION for Countdown ---
         function playCountdown(game, callback) {
             const overlay = game.canvas.nextElementSibling;
-            let count = 2; // Countdown shortened to 2 seconds
-            
+            let count = 2;
             readyFightSound.currentTime = 0;
             readyFightSound.play();
-
             const interval = setInterval(() => {
                 overlay.innerText = count;
                 overlay.style.opacity = 1;
                 setTimeout(() => { overlay.style.opacity = 0; }, 700);
-                
                 count--;
                 if (count < 0) {
                     clearInterval(interval);
@@ -326,7 +278,10 @@
         }
 
         // --- GAME IMPLEMENTATIONS ---
-
+        // Zde následuje veškerá herní logika (Snake, Pong, atd.),
+        // která je naprosto stejná jako v předchozí verzi.
+        // Pro zkrácení odpovědi ji sem nebudu znovu kopírovat.
+        // Vložte ji sem z předchozího souboru.
         // --- SNAKE ---
         gameInstances.snake = {
             canvas: document.getElementById('snake-canvas'),
@@ -379,7 +334,6 @@
             stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause(); },
             togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'hidden' : 'auto'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
         };
-
         // --- PONG ---
         gameInstances.pong = {
             canvas: document.getElementById('pong-canvas'), music: document.getElementById('pong-music'), ctx: null, ball: {}, player: {}, ai: {}, paddleWidth: 0, paddleHeight: 0, paused: false, loop: null, maxScore: 10, gameOver: false,
@@ -429,7 +383,6 @@
             stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause();},
             togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'hidden' : 'auto'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
         };
-
         // --- BREAKOUT ---
         gameInstances.breakout = {
             canvas: document.getElementById('breakout-canvas'), music: document.getElementById('breakout-music'), ctx: null, paddle: {}, balls: [], bricks: [], score: 0, lives: 3, paused: false, gameOver: false, loop: null,
@@ -444,7 +397,6 @@
                 if (this.paused || this.gameOver) return;
                 if (keysPressed['ArrowLeft']) this.paddle.x -= this.paddle.speed;
                 if (keysPressed['ArrowRight']) this.paddle.x += this.paddle.speed;
-
                 if (this.paddle.x < 0) this.paddle.x = 0;
                 if (this.paddle.x + this.paddle.width > this.canvas.width) this.paddle.x = this.canvas.width - this.paddle.width;
                 for (let i = this.balls.length - 1; i >= 0; i--) {
@@ -471,7 +423,6 @@
             stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause();},
             togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'hidden' : 'auto'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
         };
-
         // --- DINO RUN ---
         gameInstances.dino = {
             canvas: document.getElementById('dino-canvas'), music: document.getElementById('dino-music'), ctx: null, dino: {}, obstacles: [], gameSpeed: 5, gravity: 0.6, score: 0, frameCount: 0, paused: false, gameOver: false, loop: null,
@@ -519,7 +470,6 @@
             stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause();},
             togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'hidden' : 'auto'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
         };
-
         // --- SPACE INVADERS ---
         gameInstances.invaders = {
             canvas: document.getElementById('invaders-canvas'), music: document.getElementById('invaders-music'), ctx: null, player: {}, bullets: [], invaders: [], invaderBullets: [], invaderDirection: 1, invaderSpeed: 0.5, score: 0, paused: false, gameOver: false, loop: null, lastShotTime: 0, shootCooldown: 300,
@@ -576,7 +526,6 @@
             stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause();},
             togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'hidden' : 'auto'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
         };
-
         // --- TETRIS ---
         gameInstances.tetris = {
             canvas: document.getElementById('tetris-canvas'), music: document.getElementById('tetris-music'), ctx: null, grid: [], score: 0, gameOver: false, paused: false, loop: null, dropCounter: 0, dropInterval: 1000, lastTime: 0, cols: 12, rows: 20, blockSize: 0,
@@ -584,13 +533,13 @@
             colors: [null, '#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#06b6d4', '#8b5cf6'],
             init() { this.ctx = this.canvas.getContext('2d'); window.addEventListener('keydown', this.handleInput.bind(this)); },
             reset() {
-                if (this.canvas.height === 0) return; // Avoid running reset if canvas is not visible
+                if (this.canvas.height === 0) return;
                 this.blockSize = this.canvas.height / this.rows;
                 this.cols = Math.floor(this.canvas.width / this.blockSize);
                 this.grid = this.createMatrix(this.cols, this.rows);
                 this.score = 0;
                 this.gameOver = false;
-                this.paused = true; // Start paused
+                this.paused = true;
                 this.playerReset();
                 this.music.currentTime = 0;
             },
@@ -609,7 +558,7 @@
             drawMatrix(matrix, offset) { matrix.forEach((row, y) => { row.forEach((value, x) => { if (value !== 0) { this.ctx.fillStyle = this.colors[value]; this.ctx.fillRect((x + offset.x) * this.blockSize, (y + offset.y) * this.blockSize, this.blockSize, this.blockSize); } }); }); },
             draw() {
                 this.ctx.fillStyle = '#1e293b'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-                if (!this.grid || !this.player.matrix) return; // Guard against drawing before reset
+                if (!this.grid || !this.player.matrix) return;
                 this.drawMatrix(this.grid, { x: 0, y: 0 }); this.drawMatrix(this.player.matrix, this.player.pos);
                 this.ctx.fillStyle = 'white'; this.ctx.font = '16px "Silkscreen"'; this.ctx.fillText(`Score: ${this.score}`, 10, 20);
                 if (this.gameOver) { this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = 'black'; this.ctx.textAlign = 'center'; this.ctx.font = '32px "Silkscreen"'; this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2); }
@@ -646,13 +595,10 @@
                     document.body.style.overflow = 'hidden';
                     activeGame = gameName;
                     win.classList.add('active');
-                    
-                    // Initialize canvas size before countdown
                     game.canvas.width = game.canvas.offsetWidth;
                     game.canvas.height = game.canvas.offsetHeight;
-                    game.reset(); // Reset game state
-                    game.draw(); // Draw initial state for countdown background
-                    
+                    game.reset();
+                    game.draw();
                     playCountdown(game, () => {
                         game.start();
                     });
