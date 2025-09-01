@@ -2,8 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Optimalizace: Přidán meta description pro SEO -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="description" content="Zahrajte si klasické retro hry jako Snake, Pong, Tetris a další přímo ve vašem prohlížeči. Arkáda plná nostalgické zábavy.">
     <title>Retro Herní Arkáda</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -101,18 +100,74 @@
             -ms-user-select: none;
             user-select: none;
         }
+
+        /* --- STYLY PRO DOTYKOVÉ OVLÁDÁNÍ --- */
+        #touch-controls {
+            display: none; /* Skryto na desktopu */
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 100;
+            opacity: 0.7;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        #d-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(2, 60px);
+            grid-gap: 15px;
+        }
+        
+        #action-button {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #touch-controls button {
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            border: 3px solid #1f2937;
+            background-color: rgba(255, 255, 255, 0.6);
+            border-radius: 50%; /* Kulatá tlačítka */
+            color: #1f2937;
+            font-family: 'Press Start 2P', cursive;
+        }
+        
+        #btn-action {
+             width: 80px;
+             height: 80px;
+             font-size: 32px;
+        }
+
+        /* Umístění tlačítek v D-Padu */
+        #btn-left { grid-column: 1; grid-row: 2; }
+        #btn-up { grid-column: 2; grid-row: 1; }
+        #btn-down { grid-column: 2; grid-row: 2; }
+        #btn-right { grid-column: 3; grid-row: 2; }
+        
+        /* Zobrazit ovládání pouze na dotykových zařízeních (mobilech/tabletech) */
+        @media (max-width: 768px) {
+            #touch-controls {
+                display: flex;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-800 text-white p-4 sm:p-8 flex flex-col min-h-screen noselect">
     <header class="text-center mb-4 sm:mb-8">
         <h1 class="text-4xl md:text-6xl font-bungee tracking-wider">Retro Herní Arkáda</h1>
-        <!-- Optimalizace: Zvýšený kontrast pro lepší čitelnost -->
         <p class="text-gray-300 mt-2 font-vt323 text-xl">Klikni na hru pro spuštění / pauzu</p>
         <p class="text-gray-400 mt-4 font-vt323 text-lg">Příjemnou zábavu ti přeje Gabriel</p>
     </header>
 
     <main class="flex-grow grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
-        <!-- Optimalizace: Převod <div> na <button> pro přístupnost -->
         <button id="snake-window" class="game-window" data-game="snake">
             <h2 class="text-4xl md:text-5xl font-press-start text-gray-900">SNAKE</h2>
             <canvas id="snake-canvas"></canvas>
@@ -150,6 +205,19 @@
         </button>
     </main>
 
+    <div id="touch-controls">
+        <div id="d-pad">
+            <button id="btn-left">◄</button>
+            <button id="btn-up">▲</button>
+            <button id="btn-down">▼</button>
+            <button id="btn-right">►</button>
+        </div>
+        <div id="action-button">
+            <button id="btn-action">A</button>
+        </div>
+    </div>
+
+
     <footer class="mt-8 pt-6 border-t border-gray-700 text-center">
         <div class="flex flex-col md:flex-row items-center justify-center gap-6">
             <div class="text-left">
@@ -160,13 +228,11 @@
                 </a>
             </div>
             <div>
-                <!-- Optimalizace: Přidány atributy width a height pro prevenci CLS -->
                 <img src="bmc_qr.png" alt="QR kód pro Buy Me a Coffee" class="w-32 h-32 rounded-lg border-4 border-gray-600" width="128" height="128">
             </div>
         </div>
     </footer>
     
-    <!-- Audio elements -->
     <audio id="snake-music" loop><source src="hadi-tanec.mp3" type="audio/mpeg"></audio>
     <audio id="pong-music" loop><source src="pong.mp3" type="audio/mpeg"></audio>
     <audio id="breakout-music" loop><source src="breakout.mp3" type="audio/mpeg"></audio>
@@ -176,6 +242,42 @@
     
     <audio id="game-over-sound"><source src="game-over.mp3" type="audio/mpeg"></audio>
     <audio id="ready-fight-sound"><source src="ready-fight.mp3" type="audio/mpeg"></audio>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            function simulateKeyEvent(type, key) {
+                // Vytvoří a odešle událost stisku klávesy, aby ji herní logika zachytila
+                const event = new KeyboardEvent(type, { 'key': key, 'bubbles': true });
+                window.dispatchEvent(event);
+            }
+
+            const touchControls = {
+                'btn-left': 'ArrowLeft',
+                'btn-right': 'ArrowRight',
+                'btn-up': 'ArrowUp',
+                'btn-down': 'ArrowDown',
+                'btn-action': ' ' // Mezerník pro akce (skok, střelba)
+            };
+
+            for (const [btnId, key] of Object.entries(touchControls)) {
+                const button = document.getElementById(btnId);
+                if (button) {
+                    // Při dotyku prstu simuluje stisk klávesy
+                    button.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        simulateKeyEvent('keydown', key);
+                    }, { passive: false });
+
+                    // Při zvednutí prstu simuluje uvolnění klávesy
+                    button.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        simulateKeyEvent('keyup', key);
+                    }, { passive: false });
+                }
+            }
+        });
+    </script>
+
 
     <script>
         // --- GLOBAL GAME CONTROLLER ---
