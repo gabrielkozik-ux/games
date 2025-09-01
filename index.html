@@ -69,9 +69,8 @@
             -ms-user-select: none; user-select: none;
         }
 
-        /* --- STYLY PRO DOTYKOVÉ OVLÁDÁNÍ --- */
         #touch-controls {
-            display: none; /* Skryto na desktopu */
+            display: none;
             position: fixed; bottom: 0; left: 0; width: 100%;
             padding: 20px; box-sizing: border-box; z-index: 100;
             opacity: 0.7; justify-content: space-between; align-items: flex-end;
@@ -208,7 +207,13 @@
         const readyFightSound = document.getElementById('ready-fight-sound');
         const victorySound = document.getElementById('victory-sound');
 
-        window.addEventListener('keydown', (e) => { keysPressed[e.key] = true; });
+        window.addEventListener('keydown', (e) => { 
+            // Zabrání pauznutí hry při stisku mezerníku (který by jinak simuloval kliknutí na aktivní <button>)
+            if (e.key === ' ' && activeGame) {
+                e.preventDefault();
+            }
+            keysPressed[e.key] = true; 
+        });
         window.addEventListener('keyup', (e) => { keysPressed[e.key] = false; });
         
         function stopAllMusic() {
@@ -266,7 +271,7 @@
 
         // --- PONG ---
         gameInstances.pong = {
-            canvas: document.getElementById('pong-canvas'), music: document.getElementById('pong-music'), ctx: null, ball: {}, player: {}, ai: {}, paddleWidth: 0, paddleHeight: 0, paused: false, loop: null, maxScore: 5, gameOver: false, gameWon: false,
+            canvas: document.getElementById('pong-canvas'), music: document.getElementById('pong-music'), ctx: null, ball: {}, player: {}, ai: {}, paddleWidth: 0, paddleHeight: 0, paused: false, loop: null, maxScore: 10, gameOver: false, gameWon: false,
             init() { this.ctx = this.canvas.getContext('2d'); },
             reset() {
                 this.paddleWidth = this.canvas.width / 80; this.paddleHeight = this.canvas.height / 6;
@@ -320,18 +325,12 @@
             },
             createBricks() { this.bricks = []; const rows = 5, cols = 8, padding = 2, brickWidth = (this.canvas.width - padding * (cols + 1)) / cols, brickHeight = 20; for (let c = 0; c < cols; c++) for (let r = 0; r < rows; r++) this.bricks.push({ x: c * (brickWidth + padding) + padding, y: r * (brickHeight + padding) + padding + 30, width: brickWidth, height: brickHeight, visible: true }); },
             spawnPowerUp(x, y) {
-                if (Math.random() < 0.2) { // 20% chance to spawn a power-up
-                    const type = Math.random() < 0.5 ? 'widePaddle' : 'multiBall';
-                    this.powerUps.push({ x, y, size: 10, dy: 2, type });
-                }
+                if (Math.random() < 0.2) { const type = Math.random() < 0.5 ? 'widePaddle' : 'multiBall'; this.powerUps.push({ x, y, size: 10, dy: 2, type }); }
             },
             update() {
                 if (this.paused || this.gameOver) return;
-                if (keysPressed['ArrowLeft']) this.paddle.x -= this.paddle.speed;
-                if (keysPressed['ArrowRight']) this.paddle.x += this.paddle.speed;
-                if (this.paddle.x < 0) this.paddle.x = 0;
-                if (this.paddle.x + this.paddle.width > this.canvas.width) this.paddle.x = this.canvas.width - this.paddle.width;
-                
+                if (keysPressed['ArrowLeft']) this.paddle.x -= this.paddle.speed; if (keysPressed['ArrowRight']) this.paddle.x += this.paddle.speed;
+                if (this.paddle.x < 0) this.paddle.x = 0; if (this.paddle.x + this.paddle.width > this.canvas.width) this.paddle.x = this.canvas.width - this.paddle.width;
                 for (let i = this.balls.length - 1; i >= 0; i--) {
                     let ball = this.balls[i];
                     ball.x += ball.dx; ball.y += ball.dy;
@@ -341,7 +340,6 @@
                     if (ball.y + ball.size > this.paddle.y && ball.x > this.paddle.x && ball.x < this.paddle.x + this.paddle.width) { ball.dy *= -1.02; }
                     this.bricks.forEach(brick => { if (brick.visible && ball.x > brick.x && ball.x < brick.x + brick.width && ball.y > brick.y && ball.y < brick.y + brick.height) { brick.visible = false; ball.dy *= -1; this.score++; this.spawnPowerUp(brick.x + brick.width / 2, brick.y + brick.height / 2); } });
                 }
-                
                 this.powerUps.forEach((p, i) => {
                     p.y += p.dy;
                     if (p.y > this.canvas.height) this.powerUps.splice(i, 1);
@@ -351,7 +349,6 @@
                         this.powerUps.splice(i, 1);
                     }
                 });
-
                 if (this.bricks.every(b => !b.visible)) { this.createBricks(); this.balls.push({ x: this.canvas.width / 2, y: this.canvas.height / 2, size: 7, dx: 4, dy: -4 }); }
             },
             draw() {
@@ -359,12 +356,7 @@
                 this.ctx.fillStyle = '#fde047'; this.ctx.fillRect(this.paddle.x, this.paddle.y, this.paddle.width, this.paddle.height);
                 this.balls.forEach(ball => { this.ctx.beginPath(); this.ctx.arc(ball.x, ball.y, ball.size, 0, Math.PI * 2); this.ctx.fill(); });
                 this.bricks.forEach((brick, i) => { if (brick.visible) { this.ctx.fillStyle = `hsl(${i * 360 / (5 * 8)}, 70%, 50%)`; this.ctx.fillRect(brick.x, brick.y, brick.width, brick.height); } });
-                this.powerUps.forEach(p => {
-                    this.ctx.fillStyle = p.type === 'widePaddle' ? '#22c55e' : '#3b82f6';
-                    this.ctx.beginPath(); this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); this.ctx.fill();
-                    this.ctx.fillStyle = 'white'; this.ctx.font = 'bold 12px "Bungee"'; this.ctx.textAlign = 'center'; this.ctx.textBaseline = 'middle';
-                    this.ctx.fillText(p.type === 'widePaddle' ? 'W' : 'M', p.x, p.y);
-                });
+                this.powerUps.forEach(p => { this.ctx.fillStyle = p.type === 'widePaddle' ? '#22c55e' : '#3b82f6'; this.ctx.beginPath(); this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); this.ctx.fill(); this.ctx.fillStyle = 'white'; this.ctx.font = 'bold 12px "Bungee"'; this.ctx.textAlign = 'center'; this.ctx.textBaseline = 'middle'; this.ctx.fillText(p.type === 'widePaddle' ? 'W' : 'M', p.x, p.y); });
                 this.ctx.fillStyle = 'white'; this.ctx.font = '20px "Bungee"'; this.ctx.textAlign = 'left'; this.ctx.fillText(`Score: ${this.score}`, 10, 25);
                 this.ctx.textAlign = 'center'; this.ctx.fillText(`Lives: ${this.lives}`, this.canvas.width / 2, 25);
                 if (this.gameOver) { this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = 'white'; this.ctx.textAlign = 'center'; this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2); }
@@ -375,8 +367,6 @@
             togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) { this.reset(); this.start(); return; } if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
         };
         
-        // --- DINO RUN, SPACE INVADERS, TETRIS (zůstávají stejné) ---
-        // ... zbytek herní logiky je stejný jako v předchozí verzi
         // --- DINO RUN ---
         gameInstances.dino = {
             canvas: document.getElementById('dino-canvas'), music: document.getElementById('dino-music'), ctx: null, dino: {}, obstacles: [], gameSpeed: 5, gravity: 0.6, score: 0, frameCount: 0, paused: false, gameOver: false, loop: null,
@@ -409,12 +399,33 @@
         };
         // --- TETRIS ---
         gameInstances.tetris = {
-            canvas: document.getElementById('tetris-canvas'), music: document.getElementById('tetris-music'), ctx: null, grid: [], score: 0, gameOver: false, paused: false, loop: null, dropCounter: 0, dropInterval: 1000, lastTime: 0, cols: 12, rows: 20, blockSize: 0, player: { pos: { x: 0, y: 0 }, matrix: null, score: 0 }, colors: [null, '#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#06b6d4', '#8b5cf6'],
+            canvas: document.getElementById('tetris-canvas'), music: document.getElementById('tetris-music'), ctx: null, grid: [], score: 0, gameOver: false, paused: false, loop: null, dropCounter: 0, dropInterval: 1000, lastTime: 0, cols: 12, rows: 20, blockSize: 0,
+            player: { pos: { x: 0, y: 0 }, matrix: null, score: 0 },
+            nextPiece: null,
+            pieces: 'TJLOSZI',
+            colors: [null, '#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#06b6d4', '#8b5cf6'],
             init() { this.ctx = this.canvas.getContext('2d'); window.addEventListener('keydown', this.handleInput.bind(this)); },
-            reset() { if (this.canvas.height === 0) return; this.blockSize = this.canvas.height / this.rows; this.cols = Math.floor(this.canvas.width / this.blockSize); this.grid = this.createMatrix(this.cols, this.rows); this.score = 0; this.gameOver = false; this.paused = true; this.playerReset(); this.music.currentTime = 0; },
+            reset() {
+                if (this.canvas.height === 0) return;
+                this.blockSize = this.canvas.height / this.rows;
+                this.cols = Math.floor(this.canvas.width / this.blockSize);
+                this.grid = this.createMatrix(this.cols, this.rows);
+                this.score = 0;
+                this.gameOver = false;
+                this.paused = true;
+                this.nextPiece = this.createPiece(this.pieces[Math.floor(Math.random() * this.pieces.length)]);
+                this.playerReset();
+                this.music.currentTime = 0;
+            },
             createMatrix(w, h) { const matrix = []; while (h--) { matrix.push(new Array(w).fill(0)); } return matrix; },
             createPiece(type) { if (type === 'T') return [[0, 0, 0], [1, 1, 1], [0, 1, 0]]; else if (type === 'O') return [[2, 2], [2, 2]]; else if (type === 'L') return [[0, 3, 0], [0, 3, 0], [0, 3, 3]]; else if (type === 'J') return [[0, 4, 0], [0, 4, 0], [4, 4, 0]]; else if (type === 'I') return [[0, 5, 0, 0], [0, 5, 0, 0], [0, 5, 0, 0], [0, 5, 0, 0]]; else if (type === 'S') return [[0, 6, 6], [6, 6, 0], [0, 0, 0]]; else if (type === 'Z') return [[7, 7, 0], [0, 7, 7], [0, 0, 0]]; },
-            playerReset() { const pieces = 'TJLOSZI'; this.player.matrix = this.createPiece(pieces[Math.floor(Math.random() * pieces.length)]); this.player.pos.y = 0; this.player.pos.x = (this.cols / 2 | 0) - (this.player.matrix[0].length / 2 | 0); if (this.collide(this.grid, this.player)) { this.gameOver = true; playGameOverSound(); } },
+            playerReset() {
+                this.player.matrix = this.nextPiece;
+                this.nextPiece = this.createPiece(this.pieces[Math.floor(Math.random() * this.pieces.length)]);
+                this.player.pos.y = 0;
+                this.player.pos.x = (this.cols / 2 | 0) - (this.player.matrix[0].length / 2 | 0);
+                if (this.collide(this.grid, this.player)) { this.gameOver = true; playGameOverSound(); }
+            },
             collide(grid, player) { const [m, o] = [player.matrix, player.pos]; for (let y = 0; y < m.length; ++y) { for (let x = 0; x < m[y].length; ++x) { if (m[y][x] !== 0 && (grid[y + o.y] && grid[y + o.y][x + o.x]) !== 0) return true; } } return false; },
             merge(grid, player) { player.matrix.forEach((row, y) => { row.forEach((value, x) => { if (value !== 0) { grid[y + player.pos.y][x + player.pos.x] = value; } }); }); },
             rotate(matrix, dir) { for (let y = 0; y < matrix.length; ++y) { for (let x = 0; x < y; ++x) { [matrix[x][y], matrix[y][x]] = [matrix[y][x], matrix[x][y]]; } } if (dir > 0) { matrix.forEach(row => row.reverse()); } else { matrix.reverse(); } },
@@ -424,14 +435,25 @@
             playerMove(dir) { this.player.pos.x += dir; if (this.collide(this.grid, this.player)) this.player.pos.x -= dir; },
             playerDrop() { this.player.pos.y++; if (this.collide(this.grid, this.player)) { this.player.pos.y--; this.merge(this.grid, this.player); this.playerReset(); this.gridSweep(); } this.dropCounter = 0; },
             update(time = 0) { if (this.gameOver) return; const deltaTime = time - this.lastTime; this.lastTime = time; this.dropCounter += deltaTime; if (this.dropCounter > this.dropInterval) { this.playerDrop(); } },
-            drawMatrix(matrix, offset) { matrix.forEach((row, y) => { row.forEach((value, x) => { if (value !== 0) { this.ctx.fillStyle = this.colors[value]; this.ctx.fillRect((x + offset.x) * this.blockSize, (y + offset.y) * this.blockSize, this.blockSize, this.blockSize); } }); }); },
-            draw() { this.ctx.fillStyle = '#1e293b'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); if (!this.grid || !this.player.matrix) return; this.drawMatrix(this.grid, { x: 0, y: 0 }); this.drawMatrix(this.player.matrix, this.player.pos); this.ctx.fillStyle = 'white'; this.ctx.font = '16px "Silkscreen"'; this.ctx.fillText(`Score: ${this.score}`, 10, 20); if (this.gameOver) { this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = 'black'; this.ctx.textAlign = 'center'; this.ctx.font = '32px "Silkscreen"'; this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2); } },
+            drawMatrix(matrix, offset, size) {
+                const blockSize = size || this.blockSize;
+                matrix.forEach((row, y) => { row.forEach((value, x) => { if (value !== 0) { this.ctx.fillStyle = this.colors[value]; this.ctx.fillRect((x + offset.x) * blockSize, (y + offset.y) * blockSize, blockSize - 1, blockSize - 1); } }); });
+            },
+            draw() {
+                this.ctx.fillStyle = '#1e293b'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                if (!this.grid || !this.player.matrix) return;
+                this.drawMatrix(this.grid, { x: 0, y: 0 });
+                this.drawMatrix(this.player.matrix, this.player.pos);
+                this.ctx.fillStyle = 'white'; this.ctx.font = '16px "Silkscreen"'; this.ctx.textAlign = 'left'; this.ctx.fillText(`Score: ${this.score}`, 10, 20);
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; this.ctx.fillRect(this.canvas.width - this.blockSize * 5, this.blockSize, this.blockSize * 4, this.blockSize * 4);
+                this.drawMatrix(this.nextPiece, { x: this.cols - 4.5, y: 1.5 }, this.blockSize * 0.8);
+                if (this.gameOver) { this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = 'black'; this.ctx.textAlign = 'center'; this.ctx.font = '32px "Silkscreen"'; this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2); }
+            },
             gameLoop(time) { if (!this.paused) { this.update(time); this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
             start() { this.paused = false; this.lastTime = 0; this.dropCounter = 0; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); this.music.play(); },
             stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause(); document.body.style.overflow = 'auto';},
             togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) { this.reset(); this.start(); return; } if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
         };
-
 
         // --- MAIN EVENT LISTENER ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -442,7 +464,7 @@
                     const gameName = win.dataset.game;
                     const game = gameInstances[gameName];
                     
-                    if (game.gameOver || game.gameWon) {
+                    if (game.gameOver || (game.hasOwnProperty('gameWon') && game.gameWon)) {
                         game.reset();
                         playCountdown(game, () => game.start());
                         return;
