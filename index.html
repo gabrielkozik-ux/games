@@ -96,7 +96,6 @@
         #btn-down { grid-column: 2; grid-row: 2; }
         #btn-right { grid-column: 3; grid-row: 2; }
         
-        /* Zobrazí ovládání pouze na zařízeních s menší obrazovkou (mobily/tablety) */
         @media (max-width: 768px) {
             #touch-controls {
                 display: flex;
@@ -177,11 +176,12 @@
     <audio id="dino-music" loop><source src="Dino-run.mp3" type="audio/mpeg"></audio>
     <audio id="invaders-music" loop><source src="space-invaders.mp3" type="audio/mpeg"></audio>
     <audio id="tetris-music" loop><source src="tetris.mp3" type="audio/mpeg"></audio>
+    
     <audio id="game-over-sound"><source src="game-over.mp3" type="audio/mpeg"></audio>
     <audio id="ready-fight-sound"><source src="ready-fight.mp3" type="audio/mpeg"></audio>
+    <audio id="victory-sound"><source src="victory.mp3" type="audio/mpeg"></audio>
 
     <script>
-        // SKRIPT PRO DOTYKOVÉ OVLÁDÁNÍ
         document.addEventListener('DOMContentLoaded', () => {
             function simulateKeyEvent(type, key) {
                 const event = new KeyboardEvent(type, { 'key': key, 'bubbles': true });
@@ -190,41 +190,45 @@
             const touchControls = {
                 'btn-left': 'ArrowLeft', 'btn-right': 'ArrowRight',
                 'btn-up': 'ArrowUp', 'btn-down': 'ArrowDown',
-                'btn-action': ' ' // Mezerník pro akce
+                'btn-action': ' '
             };
             for (const [btnId, key] of Object.entries(touchControls)) {
                 const button = document.getElementById(btnId);
                 if (button) {
-                    button.addEventListener('touchstart', (e) => {
-                        e.preventDefault();
-                        simulateKeyEvent('keydown', key);
-                    }, { passive: false });
-                    button.addEventListener('touchend', (e) => {
-                        e.preventDefault();
-                        simulateKeyEvent('keyup', key);
-                    }, { passive: false });
+                    button.addEventListener('touchstart', (e) => { e.preventDefault(); simulateKeyEvent('keydown', key); }, { passive: false });
+                    button.addEventListener('touchend', (e) => { e.preventDefault(); simulateKeyEvent('keyup', key); }, { passive: false });
                 }
             }
         });
 
-        // --- GLOBAL GAME CONTROLLER ---
         let activeGame = null;
         const gameInstances = {};
         const keysPressed = {};
         const gameOverSound = document.getElementById('game-over-sound');
         const readyFightSound = document.getElementById('ready-fight-sound');
+        const victorySound = document.getElementById('victory-sound');
 
-        // --- GLOBAL KEY LISTENERS ---
         window.addEventListener('keydown', (e) => { keysPressed[e.key] = true; });
         window.addEventListener('keyup', (e) => { keysPressed[e.key] = false; });
         
-        function playGameOverSound() {
+        function stopAllMusic() {
             if (activeGame && gameInstances[activeGame].music) {
                 gameInstances[activeGame].music.pause();
                 gameInstances[activeGame].music.currentTime = 0;
             }
+        }
+
+        function playGameOverSound() {
+            stopAllMusic();
             gameOverSound.currentTime = 0;
             gameOverSound.play();
+            document.body.style.overflow = 'auto';
+        }
+
+        function playVictorySound() {
+            stopAllMusic();
+            victorySound.currentTime = 0;
+            victorySound.play();
             document.body.style.overflow = 'auto';
         }
 
@@ -245,7 +249,6 @@
             }, 1000);
         }
 
-        // --- HERNÍ LOGIKA (zůstává stejná) ---
         // --- SNAKE ---
         gameInstances.snake = {
             canvas: document.getElementById('snake-canvas'), music: document.getElementById('snake-music'), ctx: null, tileSize: 20, snake: [], food: {}, direction: 'right', newDirection: 'right', score: 0, gameOver: false, paused: false, loop: null, lastUpdateTime: 0, updateInterval: 120,
@@ -257,35 +260,123 @@
             draw() { this.ctx.fillStyle = '#1a2e05'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = '#84cc16'; this.snake.forEach(seg => { this.ctx.fillRect(seg.x * this.tileSize, seg.y * this.tileSize, this.tileSize - 1, this.tileSize - 1); }); this.ctx.fillStyle = '#ef4444'; this.ctx.fillRect(this.food.x * this.tileSize, this.food.y * this.tileSize, this.tileSize, this.tileSize); this.ctx.fillStyle = 'white'; this.ctx.font = `${this.tileSize * 1.5}px "Press Start 2P"`; this.ctx.fillText(`Score: ${this.score}`, this.tileSize, this.tileSize * 2); if (this.gameOver) { this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = 'white'; this.ctx.textAlign = 'center'; this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2); } },
             gameLoop(time) { if (!this.paused) { if (time - this.lastUpdateTime > this.updateInterval) { this.update(); this.lastUpdateTime = time; } this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
             start() { this.paused = false; this.lastUpdateTime = 0; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); this.music.play(); },
-            stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause(); },
-            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'hidden' : 'auto'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
+            stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause(); document.body.style.overflow = 'auto'; },
+            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) { this.reset(); this.start(); return; } if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
         };
+
         // --- PONG ---
         gameInstances.pong = {
-            canvas: document.getElementById('pong-canvas'), music: document.getElementById('pong-music'), ctx: null, ball: {}, player: {}, ai: {}, paddleWidth: 0, paddleHeight: 0, paused: false, loop: null, maxScore: 10, gameOver: false,
+            canvas: document.getElementById('pong-canvas'), music: document.getElementById('pong-music'), ctx: null, ball: {}, player: {}, ai: {}, paddleWidth: 0, paddleHeight: 0, paused: false, loop: null, maxScore: 5, gameOver: false, gameWon: false,
             init() { this.ctx = this.canvas.getContext('2d'); },
-            reset() { this.paddleWidth = this.canvas.width / 80; this.paddleHeight = this.canvas.height / 6; this.ball = { x: this.canvas.width / 2, y: this.canvas.height / 2, size: this.canvas.width / 100, dx: 5, dy: 5 }; this.player = { x: 10, y: this.canvas.height / 2 - this.paddleHeight / 2, width: this.paddleWidth, height: this.paddleHeight, score: 0, speed: 8 }; this.ai = { x: this.canvas.width - 10 - this.paddleWidth, y: this.canvas.height / 2 - this.paddleHeight / 2, width: this.paddleWidth, height: this.paddleHeight, score: 0, speed: 4 }; this.gameOver = false; this.music.currentTime = 0; },
-            update() { if (this.paused || this.gameOver) return; if (keysPressed['ArrowUp']) this.player.y -= this.player.speed; if (keysPressed['ArrowDown']) this.player.y += this.player.speed; if (this.player.y < 0) this.player.y = 0; if (this.player.y + this.player.height > this.canvas.height) this.player.y = this.canvas.height - this.player.height; this.ball.x += this.ball.dx; this.ball.y += this.ball.dy; if (this.ball.y + this.ball.size > this.canvas.height || this.ball.y - this.ball.size < 0) this.ball.dy *= -1; if (this.ball.x - this.ball.size < this.player.x + this.player.width && this.ball.x > this.player.x && this.ball.y > this.player.y && this.ball.y < this.player.y + this.player.height) this.ball.dx *= -1.1; if (this.ball.x + this.ball.size > this.ai.x && this.ball.x < this.ai.x + this.ai.width && this.ball.y > this.ai.y && this.ball.y < this.ai.y + this.ai.height) this.ball.dx *= -1.1; if (this.ball.x + this.ball.size < 0) { this.ai.score++; this.resetBall(); } if (this.ball.x - this.ball.size > this.canvas.width) { this.player.score++; this.resetBall(); } const aiCenter = this.ai.y + this.ai.height / 2; if (aiCenter < this.ball.y - 35) this.ai.y += this.ai.speed; else if (aiCenter > this.ball.y + 35) this.ai.y -= this.ai.speed; if (this.ai.y < 0) this.ai.y = 0; if (this.ai.y + this.ai.height > this.canvas.height) this.ai.y = this.canvas.height - this.ai.height; if (this.player.score >= this.maxScore || this.ai.score >= this.maxScore) { this.gameOver = true; playGameOverSound(); } },
+            reset() {
+                this.paddleWidth = this.canvas.width / 80; this.paddleHeight = this.canvas.height / 6;
+                this.ball = { x: this.canvas.width / 2, y: this.canvas.height / 2, size: this.canvas.width / 100, dx: 5, dy: 5 };
+                this.player = { x: 10, y: this.canvas.height / 2 - this.paddleHeight / 2, width: this.paddleWidth, height: this.paddleHeight, score: 0, speed: 8 };
+                this.ai = { x: this.canvas.width - 10 - this.paddleWidth, y: this.canvas.height / 2 - this.paddleHeight / 2, width: this.paddleWidth, height: this.paddleHeight, score: 0, speed: 4 };
+                this.gameOver = false; this.gameWon = false; this.music.currentTime = 0;
+            },
+            update() {
+                if (this.paused || this.gameOver || this.gameWon) return;
+                if (keysPressed['ArrowUp']) this.player.y -= this.player.speed;
+                if (keysPressed['ArrowDown']) this.player.y += this.player.speed;
+                if (this.player.y < 0) this.player.y = 0;
+                if (this.player.y + this.player.height > this.canvas.height) this.player.y = this.canvas.height - this.player.height;
+                this.ball.x += this.ball.dx; this.ball.y += this.ball.dy;
+                if (this.ball.y + this.ball.size > this.canvas.height || this.ball.y - this.ball.size < 0) this.ball.dy *= -1;
+                if (this.ball.x - this.ball.size < this.player.x + this.player.width && this.ball.x > this.player.x && this.ball.y > this.player.y && this.ball.y < this.player.y + this.player.height) this.ball.dx *= -1.1;
+                if (this.ball.x + this.ball.size > this.ai.x && this.ball.x < this.ai.x + this.ai.width && this.ball.y > this.ai.y && this.ball.y < this.ai.y + this.ai.height) this.ball.dx *= -1.1;
+                if (this.ball.x + this.ball.size < 0) { this.ai.score++; this.resetBall(); }
+                if (this.ball.x - this.ball.size > this.canvas.width) { this.player.score++; this.resetBall(); }
+                const aiCenter = this.ai.y + this.ai.height / 2;
+                if (aiCenter < this.ball.y - 35) this.ai.y += this.ai.speed; else if (aiCenter > this.ball.y + 35) this.ai.y -= this.ai.speed;
+                if (this.ai.y < 0) this.ai.y = 0; if (this.ai.y + this.ai.height > this.canvas.height) this.ai.y = this.canvas.height - this.ai.height;
+                if (this.ai.score >= this.maxScore) { this.gameOver = true; playGameOverSound(); }
+                if (this.player.score >= this.maxScore) { this.gameWon = true; playVictorySound(); }
+            },
             resetBall() { this.ball.x = this.canvas.width / 2; this.ball.y = this.canvas.height / 2; this.ball.dx = (Math.random() > 0.5 ? 1 : -1) * 5; this.ball.dy = (Math.random() > 0.5 ? 1 : -1) * 5; },
-            draw() { this.ctx.fillStyle = '#0f172a'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.strokeStyle = 'rgba(255,255,255,0.2)'; this.ctx.beginPath(); this.ctx.moveTo(this.canvas.width / 2, 0); this.ctx.lineTo(this.canvas.width / 2, this.canvas.height); this.ctx.stroke(); this.ctx.fillStyle = 'white'; this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height); this.ctx.fillRect(this.ai.x, this.ai.y, this.ai.width, this.ai.height); this.ctx.beginPath(); this.ctx.arc(this.ball.x, this.ball.y, this.ball.size, 0, Math.PI * 2); this.ctx.fill(); this.ctx.font = `${this.canvas.width/15}px "Silkscreen"`; this.ctx.fillText(this.player.score, this.canvas.width / 4, 50); this.ctx.fillText(this.ai.score, this.canvas.width * 3 / 4, 50); if (this.gameOver) { this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = 'white'; this.ctx.textAlign = 'center'; this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2); } },
+            draw() {
+                this.ctx.fillStyle = '#0f172a'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.strokeStyle = 'rgba(255,255,255,0.2)'; this.ctx.beginPath(); this.ctx.moveTo(this.canvas.width / 2, 0); this.ctx.lineTo(this.canvas.width / 2, this.canvas.height); this.ctx.stroke();
+                this.ctx.fillStyle = 'white'; this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height); this.ctx.fillRect(this.ai.x, this.ai.y, this.ai.width, this.ai.height);
+                this.ctx.beginPath(); this.ctx.arc(this.ball.x, this.ball.y, this.ball.size, 0, Math.PI * 2); this.ctx.fill();
+                this.ctx.font = `${this.canvas.width/15}px "Silkscreen"`; this.ctx.textAlign = 'center'; this.ctx.fillText(this.player.score, this.canvas.width / 4, 50); this.ctx.fillText(this.ai.score, this.canvas.width * 3 / 4, 50);
+                if (this.gameOver) { this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = 'white'; this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2); }
+                if (this.gameWon) { this.ctx.fillStyle = 'rgba(0, 100, 0, 0.5)'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = '#fde047'; this.ctx.fillText('YOU WIN!', this.canvas.width / 2, this.canvas.height / 2); }
+            },
             gameLoop() { if (!this.paused) { this.update(); this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
-            start() { this.paused = false; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); this.music.play(); },
-            stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause(); },
-            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'hidden' : 'auto'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
+            start() { this.paused = false; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); this.music.play();},
+            stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause(); document.body.style.overflow = 'auto';},
+            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver || this.gameWon) { this.reset(); this.start(); return; } if (this.paused) this.music.pause(); else this.music.play(); }
         };
+
         // --- BREAKOUT ---
         gameInstances.breakout = {
-            canvas: document.getElementById('breakout-canvas'), music: document.getElementById('breakout-music'), ctx: null, paddle: {}, balls: [], bricks: [], score: 0, lives: 3, paused: false, gameOver: false, loop: null,
+            canvas: document.getElementById('breakout-canvas'), music: document.getElementById('breakout-music'), ctx: null, paddle: {}, balls: [], bricks: [], powerUps: [], score: 0, lives: 3, paused: false, gameOver: false, loop: null,
             init() { this.ctx = this.canvas.getContext('2d'); },
-            reset() { this.paddle = { x: this.canvas.width / 2 - 50, y: this.canvas.height - 20, width: 100, height: 10, speed: 10 }; this.balls = [{ x: this.canvas.width / 2, y: this.canvas.height - 30, size: 7, dx: 4, dy: -4 }]; this.createBricks(); this.score = 0; this.lives = 3; this.gameOver = false; this.music.currentTime = 0; },
+            reset() {
+                this.paddle = { x: this.canvas.width / 2 - 50, y: this.canvas.height - 20, width: 100, height: 10, speed: 10 };
+                this.balls = [{ x: this.canvas.width / 2, y: this.canvas.height - 30, size: 7, dx: 4, dy: -4 }];
+                this.powerUps = []; this.createBricks(); this.score = 0; this.lives = 3; this.gameOver = false; this.music.currentTime = 0;
+            },
             createBricks() { this.bricks = []; const rows = 5, cols = 8, padding = 2, brickWidth = (this.canvas.width - padding * (cols + 1)) / cols, brickHeight = 20; for (let c = 0; c < cols; c++) for (let r = 0; r < rows; r++) this.bricks.push({ x: c * (brickWidth + padding) + padding, y: r * (brickHeight + padding) + padding + 30, width: brickWidth, height: brickHeight, visible: true }); },
-            update() { if (this.paused || this.gameOver) return; if (keysPressed['ArrowLeft']) this.paddle.x -= this.paddle.speed; if (keysPressed['ArrowRight']) this.paddle.x += this.paddle.speed; if (this.paddle.x < 0) this.paddle.x = 0; if (this.paddle.x + this.paddle.width > this.canvas.width) this.paddle.x = this.canvas.width - this.paddle.width; for (let i = this.balls.length - 1; i >= 0; i--) { let ball = this.balls[i]; ball.x += ball.dx; ball.y += ball.dy; if (ball.x + ball.size > this.canvas.width || ball.x - ball.size < 0) ball.dx *= -1; if (ball.y - ball.size < 0) ball.dy *= -1; if (ball.y + ball.size > this.canvas.height) { this.balls.splice(i, 1); if (this.balls.length === 0) { this.lives--; if (this.lives === 0) { this.gameOver = true; playGameOverSound(); } else { this.balls.push({ x: this.canvas.width / 2, y: this.canvas.height - 30, size: 7, dx: 4, dy: -4 }); } } } if (ball.y + ball.size > this.paddle.y && ball.x > this.paddle.x && ball.x < this.paddle.x + this.paddle.width) { ball.dy *= -1; } this.bricks.forEach(brick => { if (brick.visible && ball.x > brick.x && ball.x < brick.x + brick.width && ball.y > brick.y && ball.y < brick.y + brick.height) { brick.visible = false; ball.dy *= -1; this.score++; } }); } if (this.bricks.every(b => !b.visible)) { this.createBricks(); this.balls.push({ x: this.canvas.width / 2, y: this.canvas.height / 2, size: 7, dx: 4, dy: -4 }); } },
-            draw() { this.ctx.fillStyle = '#4a044e'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = '#fde047'; this.ctx.fillRect(this.paddle.x, this.paddle.y, this.paddle.width, this.paddle.height); this.balls.forEach(ball => { this.ctx.beginPath(); this.ctx.arc(ball.x, ball.y, ball.size, 0, Math.PI * 2); this.ctx.fill(); }); this.bricks.forEach((brick, i) => { if (brick.visible) { this.ctx.fillStyle = `hsl(${i * 360 / (5 * 8)}, 70%, 50%)`; this.ctx.fillRect(brick.x, brick.y, brick.width, brick.height); } }); this.ctx.fillStyle = 'white'; this.ctx.font = '20px "Bungee"'; this.ctx.fillText(`Score: ${this.score}`, 10, 25); this.ctx.fillText(`Lives: ${this.lives}`, this.canvas.width - 80, 25); if (this.gameOver) { this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = 'white'; this.ctx.textAlign = 'center'; this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2); } },
+            spawnPowerUp(x, y) {
+                if (Math.random() < 0.2) { // 20% chance to spawn a power-up
+                    const type = Math.random() < 0.5 ? 'widePaddle' : 'multiBall';
+                    this.powerUps.push({ x, y, size: 10, dy: 2, type });
+                }
+            },
+            update() {
+                if (this.paused || this.gameOver) return;
+                if (keysPressed['ArrowLeft']) this.paddle.x -= this.paddle.speed;
+                if (keysPressed['ArrowRight']) this.paddle.x += this.paddle.speed;
+                if (this.paddle.x < 0) this.paddle.x = 0;
+                if (this.paddle.x + this.paddle.width > this.canvas.width) this.paddle.x = this.canvas.width - this.paddle.width;
+                
+                for (let i = this.balls.length - 1; i >= 0; i--) {
+                    let ball = this.balls[i];
+                    ball.x += ball.dx; ball.y += ball.dy;
+                    if (ball.x + ball.size > this.canvas.width || ball.x - ball.size < 0) ball.dx *= -1;
+                    if (ball.y - ball.size < 0) ball.dy *= -1;
+                    if (ball.y + ball.size > this.canvas.height) { this.balls.splice(i, 1); if (this.balls.length === 0) { this.lives--; if (this.lives <= 0) { this.gameOver = true; playGameOverSound(); } else { this.paddle.width = 100; this.balls.push({ x: this.canvas.width / 2, y: this.canvas.height - 30, size: 7, dx: 4, dy: -4 }); } } }
+                    if (ball.y + ball.size > this.paddle.y && ball.x > this.paddle.x && ball.x < this.paddle.x + this.paddle.width) { ball.dy *= -1.02; }
+                    this.bricks.forEach(brick => { if (brick.visible && ball.x > brick.x && ball.x < brick.x + brick.width && ball.y > brick.y && ball.y < brick.y + brick.height) { brick.visible = false; ball.dy *= -1; this.score++; this.spawnPowerUp(brick.x + brick.width / 2, brick.y + brick.height / 2); } });
+                }
+                
+                this.powerUps.forEach((p, i) => {
+                    p.y += p.dy;
+                    if (p.y > this.canvas.height) this.powerUps.splice(i, 1);
+                    if (p.x > this.paddle.x && p.x < this.paddle.x + this.paddle.width && p.y > this.paddle.y && p.y < this.paddle.y + this.paddle.height) {
+                        if (p.type === 'widePaddle') this.paddle.width = 150;
+                        if (p.type === 'multiBall') this.balls.push({ x: this.paddle.x + this.paddle.width / 2, y: this.paddle.y - 10, size: 7, dx: (Math.random() - 0.5) * 8, dy: -4 });
+                        this.powerUps.splice(i, 1);
+                    }
+                });
+
+                if (this.bricks.every(b => !b.visible)) { this.createBricks(); this.balls.push({ x: this.canvas.width / 2, y: this.canvas.height / 2, size: 7, dx: 4, dy: -4 }); }
+            },
+            draw() {
+                this.ctx.fillStyle = '#4a044e'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.fillStyle = '#fde047'; this.ctx.fillRect(this.paddle.x, this.paddle.y, this.paddle.width, this.paddle.height);
+                this.balls.forEach(ball => { this.ctx.beginPath(); this.ctx.arc(ball.x, ball.y, ball.size, 0, Math.PI * 2); this.ctx.fill(); });
+                this.bricks.forEach((brick, i) => { if (brick.visible) { this.ctx.fillStyle = `hsl(${i * 360 / (5 * 8)}, 70%, 50%)`; this.ctx.fillRect(brick.x, brick.y, brick.width, brick.height); } });
+                this.powerUps.forEach(p => {
+                    this.ctx.fillStyle = p.type === 'widePaddle' ? '#22c55e' : '#3b82f6';
+                    this.ctx.beginPath(); this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); this.ctx.fill();
+                    this.ctx.fillStyle = 'white'; this.ctx.font = 'bold 12px "Bungee"'; this.ctx.textAlign = 'center'; this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText(p.type === 'widePaddle' ? 'W' : 'M', p.x, p.y);
+                });
+                this.ctx.fillStyle = 'white'; this.ctx.font = '20px "Bungee"'; this.ctx.textAlign = 'left'; this.ctx.fillText(`Score: ${this.score}`, 10, 25);
+                this.ctx.textAlign = 'center'; this.ctx.fillText(`Lives: ${this.lives}`, this.canvas.width / 2, 25);
+                if (this.gameOver) { this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = 'white'; this.ctx.textAlign = 'center'; this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2); }
+            },
             gameLoop() { if (!this.paused) { this.update(); this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
-            start() { this.paused = false; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); this.music.play(); },
-            stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause(); },
-            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'hidden' : 'auto'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
+            start() { this.paused = false; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); this.music.play();},
+            stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause(); document.body.style.overflow = 'auto';},
+            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) { this.reset(); this.start(); return; } if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
         };
+        
+        // --- DINO RUN, SPACE INVADERS, TETRIS (zůstávají stejné) ---
+        // ... zbytek herní logiky je stejný jako v předchozí verzi
         // --- DINO RUN ---
         gameInstances.dino = {
             canvas: document.getElementById('dino-canvas'), music: document.getElementById('dino-music'), ctx: null, dino: {}, obstacles: [], gameSpeed: 5, gravity: 0.6, score: 0, frameCount: 0, paused: false, gameOver: false, loop: null,
@@ -300,8 +391,8 @@
             draw() { this.ctx.fillStyle = '#f3f4f6'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = '#4b5563'; this.ctx.fillRect(0, this.canvas.height - 20, this.canvas.width, 20); this.drawDino(); this.obstacles.forEach(obs => { if (obs.type === 'cactus') this.drawCactus(obs); else this.drawBird(obs); }); this.ctx.fillStyle = '#4b5563'; this.ctx.font = '24px "VT323"'; this.ctx.textAlign = 'right'; this.ctx.fillText(`SCORE: ${Math.floor(this.score/5)}`, this.canvas.width - 20, 30); if (this.gameOver) { this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = '#f3f4f6'; this.ctx.font = '32px "VT323"'; this.ctx.textAlign = 'center'; this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2); } },
             gameLoop() { if (!this.paused) { this.update(); this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
             start() { this.paused = false; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); this.music.play(); },
-            stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause(); },
-            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'hidden' : 'auto'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
+            stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause(); document.body.style.overflow = 'auto';},
+            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) { this.reset(); this.start(); return; } if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
         };
         // --- SPACE INVADERS ---
         gameInstances.invaders = {
@@ -313,8 +404,8 @@
             draw() { this.ctx.fillStyle = '#000'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = '#0f0'; this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height); this.ctx.fillStyle = '#fff'; this.bullets.forEach(b => this.ctx.fillRect(b.x, b.y, b.width, b.height)); this.ctx.fillStyle = '#f00'; this.invaderBullets.forEach(b => this.ctx.fillRect(b.x, b.y, b.width, b.height)); this.ctx.fillStyle = '#fff'; this.invaders.forEach(inv => this.ctx.fillRect(inv.x, inv.y, inv.width, inv.height)); this.ctx.fillStyle = '#fff'; this.ctx.font = '20px "Press Start 2P"'; this.ctx.fillText(`Score: ${this.score}`, 10, 25); if (this.gameOver) { this.ctx.fillStyle = 'rgba(255, 0, 0, 0.5)'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = 'white'; this.ctx.textAlign = 'center'; this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2); } },
             gameLoop() { if (!this.paused) { this.update(); this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
             start() { this.paused = false; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); this.music.play(); },
-            stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause(); },
-            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'hidden' : 'auto'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
+            stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause(); document.body.style.overflow = 'auto';},
+            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) { this.reset(); this.start(); return; } if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
         };
         // --- TETRIS ---
         gameInstances.tetris = {
@@ -337,9 +428,10 @@
             draw() { this.ctx.fillStyle = '#1e293b'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); if (!this.grid || !this.player.matrix) return; this.drawMatrix(this.grid, { x: 0, y: 0 }); this.drawMatrix(this.player.matrix, this.player.pos); this.ctx.fillStyle = 'white'; this.ctx.font = '16px "Silkscreen"'; this.ctx.fillText(`Score: ${this.score}`, 10, 20); if (this.gameOver) { this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); this.ctx.fillStyle = 'black'; this.ctx.textAlign = 'center'; this.ctx.font = '32px "Silkscreen"'; this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2); } },
             gameLoop(time) { if (!this.paused) { this.update(time); this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
             start() { this.paused = false; this.lastTime = 0; this.dropCounter = 0; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); this.music.play(); },
-            stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause(); },
-            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'hidden' : 'auto'; if (this.gameOver) this.start(); if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
+            stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause(); document.body.style.overflow = 'auto';},
+            togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) { this.reset(); this.start(); return; } if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
         };
+
 
         // --- MAIN EVENT LISTENER ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -349,6 +441,13 @@
                 win.addEventListener('click', () => {
                     const gameName = win.dataset.game;
                     const game = gameInstances[gameName];
+                    
+                    if (game.gameOver || game.gameWon) {
+                        game.reset();
+                        playCountdown(game, () => game.start());
+                        return;
+                    }
+                    
                     if (gameName === activeGame) {
                         game.togglePause();
                         return;
