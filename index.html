@@ -47,7 +47,18 @@
         .game-window h2 { transition: opacity 0.3s ease; }
         .game-window canvas { display: none; width: 100%; height: 100%; }
         .game-window.active h2 { display: none; }
+        .game-window.active .leaderboard { display: none; } /* PŘIDÁNO: Schová žebříček při hře */
         .game-window.active canvas { display: block; }
+        
+        .leaderboard-list li { /* PŘIDÁNO: Styly pro položky žebříčku */
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        .leaderboard-list li:nth-child(odd) {
+            background-color: rgba(0,0,0,0.05);
+        }
 
         .countdown-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -133,43 +144,67 @@
         <h1 class="text-4xl md:text-6xl font-bungee tracking-wider">Retro Herní Arkáda</h1>
         <p class="text-gray-300 mt-2 font-vt323 text-xl">Klikni na hru pro spuštění / pauzu</p>
         <p class="text-gray-400 mt-4 font-vt323 text-lg">Příjemnou zábavu ti přeje Gabriel</p>
-    <div id="user-section" class="mt-4">
-    <button id="login-btn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded">Přihlásit se přes Google</button>
-    <div id="user-info" class="hidden">
-        <p>Přihlášen jako: <span id="user-name"></span></p>
-        <button id="logout-btn" class="text-sm text-red-400">Odhlásit se</button>
-    </div>
-</div>
+        <div id="user-section" class="mt-4">
+            <button id="login-btn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded">Přihlásit se přes Google</button>
+            <div id="user-info" class="hidden">
+                <p>Přihlášen jako: <span id="user-name"></span></p>
+                <button id="logout-btn" class="text-sm text-red-400">Odhlásit se</button>
+            </div>
+        </div>
     </header>
 
     <main class="flex-grow grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
         <button id="snake-window" class="game-window" data-game="snake">
             <h2 class="text-4xl md:text-5xl font-press-start text-gray-900">SNAKE</h2>
+            <div class="leaderboard mt-4 w-full px-4">
+                <h3 class="text-xl font-vt323 text-gray-800" style="text-shadow: 1px 1px 0 #fff;">TOP 5 HRÁČŮ</h3>
+                <ol class="leaderboard-list text-lg font-vt323 text-left text-gray-900"></ol>
+            </div>
             <canvas id="snake-canvas"></canvas>
             <div class="countdown-overlay font-press-start"></div>
         </button>
         <button id="pong-window" class="game-window" data-game="pong">
             <h2 class="text-4xl md:text-5xl font-silkscreen text-gray-900">PONG</h2>
+            <div class="leaderboard mt-4 w-full px-4">
+                <h3 class="text-xl font-vt323 text-gray-800" style="text-shadow: 1px 1px 0 #fff;">TOP 5 HRÁČŮ</h3>
+                <ol class="leaderboard-list text-lg font-vt323 text-left text-gray-900"></ol>
+            </div>
             <canvas id="pong-canvas"></canvas>
             <div class="countdown-overlay font-silkscreen"></div>
         </button>
         <button id="breakout-window" class="game-window" data-game="breakout">
             <h2 class="text-4xl md:text-5xl font-bungee text-gray-900">BREAKOUT</h2>
+            <div class="leaderboard mt-4 w-full px-4">
+                <h3 class="text-xl font-vt323 text-gray-800" style="text-shadow: 1px 1px 0 #fff;">TOP 5 HRÁČŮ</h3>
+                <ol class="leaderboard-list text-lg font-vt323 text-left text-gray-900"></ol>
+            </div>
             <canvas id="breakout-canvas"></canvas>
             <div class="countdown-overlay font-bungee"></div>
         </button>
         <button id="dino-window" class="game-window" data-game="dino">
             <h2 class="text-4xl md:text-5xl font-vt323 text-gray-900">DINO RUN</h2>
+            <div class="leaderboard mt-4 w-full px-4">
+                <h3 class="text-xl font-vt323 text-gray-800" style="text-shadow: 1px 1px 0 #fff;">TOP 5 HRÁČŮ</h3>
+                <ol class="leaderboard-list text-lg font-vt323 text-left text-gray-900"></ol>
+            </div>
             <canvas id="dino-canvas"></canvas>
             <div class="countdown-overlay font-vt323"></div>
         </button>
         <button id="invaders-window" class="game-window" data-game="invaders">
             <h2 class="text-4xl md:text-5xl font-press-start text-white text-center">SPACE INVADERS</h2>
+            <div class="leaderboard mt-4 w-full px-4">
+                <h3 class="text-xl font-vt323 text-white" style="text-shadow: 1px 1px 0 #000;">TOP 5 HRÁČŮ</h3>
+                <ol class="leaderboard-list text-lg font-vt323 text-left text-white"></ol>
+            </div>
             <canvas id="invaders-canvas"></canvas>
             <div class="countdown-overlay font-press-start"></div>
         </button>
         <button id="tetris-window" class="game-window" data-game="tetris">
             <h2 class="text-4xl md:text-5xl font-silkscreen text-gray-900">TETRIS</h2>
+            <div class="leaderboard mt-4 w-full px-4">
+                <h3 class="text-xl font-vt323 text-gray-800" style="text-shadow: 1px 1px 0 #fff;">TOP 5 HRÁČŮ</h3>
+                <ol class="leaderboard-list text-lg font-vt323 text-left text-gray-900"></ol>
+            </div>
             <canvas id="tetris-canvas"></canvas>
             <div class="countdown-overlay font-silkscreen"></div>
         </button>
@@ -214,72 +249,95 @@
     <audio id="victory-sound"><source src="victory.mp3" type="audio/mpeg"></audio>
 
     <script>
-// HNED NA ZAČÁTEK TVÉHO SCRIPTU
-const firebaseConfig = {
-  apiKey: "AIzaSyBWJAbTCutFX3sU_KLt6XSCvhJ_Vl5trjo",
-  authDomain: "retro-herni-arkada.firebaseapp.com",
-  projectId: "retro-herni-arkada",
-  storageBucket: "retro-herni-arkada.firebasestorage.app",
-  messagingSenderId: "15367501595",
-  appId: "1:15367501595:web:f8323a29e3c24a6dd985be"
-};
-// Inicializace Firebase
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            function simulateKeyEvent(type, key) {
-                const event = new KeyboardEvent(type, { 'key': key, 'bubbles': true });
-                window.dispatchEvent(event);
-            }
-            const touchControls = {
-                'btn-left': 'ArrowLeft', 'btn-right': 'ArrowRight',
-                'btn-up': 'ArrowUp', 'btn-down': 'ArrowDown',
-                'btn-action': ' '
-            };
-            for (const [btnId, key] of Object.entries(touchControls)) {
-                const button = document.getElementById(btnId);
-                if (button) {
-                    button.addEventListener('touchstart', (e) => { e.preventDefault(); simulateKeyEvent('keydown', key); }, { passive: false });
-                    button.addEventListener('touchend', (e) => { e.preventDefault(); simulateKeyEvent('keyup', key); }, { passive: false });
-                }
-            }
-        });
-
-        function saveCurrentScore() {
-    const user = auth.currentUser;
-    // Ukládáme, jen pokud je uživatel přihlášen, hra je aktivní a skóre je větší než 0
-    if (user && activeGame && gameInstances[activeGame].score > 0) {
-        const gameName = activeGame;
-        let scoreToSave = gameInstances[activeGame].score;
-
-        // Speciální případ pro Dino hru, kde je skóre jiné
-        if (gameName === 'dino') {
-            scoreToSave = Math.floor(scoreToSave / 5);
-        }
-
-        db.collection("scores").add({
-            userId: user.uid,
-            userName: user.displayName,
-            game: gameName,
-            score: scoreToSave,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        })
-        .then(() => {
-            console.log(`Skóre ${scoreToSave} pro hru ${gameName} bylo uloženo!`);
-            // Zde můžeš v budoucnu přidat i nějakou hezkou notifikaci pro hráče
-        })
-        .catch((error) => {
-            console.error("Chyba při ukládání skóre: ", error);
-        });
-    }
-}
+        const firebaseConfig = {
+            apiKey: "AIzaSyBWJAbTCutFX3sU_KLt6XSCvhJ_Vl5trjo",
+            authDomain: "retro-herni-arkada.firebaseapp.com",
+            projectId: "retro-herni-arkada",
+            storageBucket: "retro-herni-arkada.appspot.com",
+            messagingSenderId: "15367501595",
+            appId: "1:15367501595:web:f8323a29e3c24a6dd985be"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
         let activeGame = null;
         const gameInstances = {};
         const keysPressed = {};
         let isMuted = false;
+        
+        // --- FUNKCE PRO FIREBASE ---
+        
+        async function displayLeaderboard(gameName) {
+            const gameWindow = document.querySelector(`.game-window[data-game="${gameName}"]`);
+            const listElement = gameWindow.querySelector('.leaderboard-list');
+            if (!listElement) return;
+
+            listElement.innerHTML = '<li>Načítání...</li>';
+
+            try {
+                const querySnapshot = await db.collection("scores")
+                    .where("game", "==", gameName)
+                    .orderBy("score", "desc")
+                    .limit(5)
+                    .get();
+
+                if (querySnapshot.empty) {
+                    listElement.innerHTML = '<li>Zatím žádné skóre. Buď první!</li>';
+                    return;
+                }
+
+                listElement.innerHTML = '';
+                let rank = 1;
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const listItem = document.createElement('li');
+                    
+                    if (rank === 1) {
+                        listItem.innerHTML = `<span>👑 ${data.userName}</span> <span>${data.score}</span>`;
+                        listItem.style.fontWeight = 'bold';
+                        listItem.style.color = '#b45309';
+                    } else {
+                        listItem.innerHTML = `<span>${rank}. ${data.userName}</span> <span>${data.score}</span>`;
+                    }
+
+                    listElement.appendChild(listItem);
+                    rank++;
+                });
+            } catch (error) {
+                console.error(`Chyba při načítání žebříčku pro ${gameName}:`, error);
+                listElement.innerHTML = '<li>Chyba načítání dat.</li>';
+            }
+        }
+        
+        function saveCurrentScore() {
+            const user = auth.currentUser;
+            if (user && activeGame && gameInstances[activeGame].score > 0) {
+                const gameName = activeGame;
+                let scoreToSave = gameInstances[activeGame].score;
+
+                if (gameName === 'dino') {
+                    scoreToSave = Math.floor(scoreToSave / 5);
+                }
+
+                db.collection("scores").add({
+                    userId: user.uid,
+                    userName: user.displayName,
+                    game: gameName,
+                    score: scoreToSave,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                })
+                .then(() => {
+                    console.log(`Skóre ${scoreToSave} pro hru ${gameName} bylo uloženo!`);
+                    displayLeaderboard(gameName); // Aktualizace žebříčku
+                })
+                .catch((error) => {
+                    console.error("Chyba při ukládání skóre: ", error);
+                });
+            }
+        }
+
+        // --- ZBÝVAJÍCÍ KÓD HRY ---
 
         const allAudio = document.querySelectorAll('audio');
         const muteButton = document.getElementById('mute-button');
@@ -289,16 +347,12 @@ const db = firebase.firestore();
 
         muteButton.addEventListener('click', () => {
             isMuted = !isMuted;
-            allAudio.forEach(audio => {
-                audio.muted = isMuted;
-            });
+            allAudio.forEach(audio => audio.muted = isMuted);
             muteButton.textContent = isMuted ? '🔇' : '🔊';
         });
 
         window.addEventListener('keydown', (e) => { 
-            if (e.key === ' ' && activeGame) {
-                e.preventDefault();
-            }
+            if (e.key === ' ' && activeGame) e.preventDefault();
             keysPressed[e.key] = true; 
         });
         window.addEventListener('keyup', (e) => { keysPressed[e.key] = false; });
@@ -311,23 +365,23 @@ const db = firebase.firestore();
         }
 
         function playGameOverSound() {
-    stopAllMusic();
-    gameOverSound.currentTime = 0;
-    gameOverSound.play();
-    document.body.style.overflow = 'auto';
-    saveCurrentScore(); // <-- PŘIDALI JSME VOLÁNÍ ZDE
+            stopAllMusic();
+            gameOverSound.currentTime = 0;
+            gameOverSound.play();
+            document.body.style.overflow = 'auto';
+            saveCurrentScore();
         }
 
         function playVictorySound() {
-    stopAllMusic();
-    victorySound.currentTime = 0;
-    victorySound.play();
-    document.body.style.overflow = 'auto';
-    saveCurrentScore(); // <-- A TAKÉ ZDE (to je pro Pong)
+            stopAllMusic();
+            victorySound.currentTime = 0;
+            victorySound.play();
+            document.body.style.overflow = 'auto';
+            saveCurrentScore();
         }
-
+        
         function playCountdown(game, callback) {
-            const overlay = game.canvas.nextElementSibling;
+            const overlay = game.canvas.nextElementSibling.nextElementSibling; // Přizpůsobeno kvůli divu žebříčku
             let count = 2;
             readyFightSound.currentTime = 0;
             readyFightSound.play();
@@ -343,6 +397,7 @@ const db = firebase.firestore();
             }, 1000);
         }
 
+        // ... ZDE POKRAČUJE VEŠKERÝ KÓD PRO JEDNOTLIVÉ HRY (SNAKE, PONG, atd.) ...
         // --- SNAKE ---
         gameInstances.snake = {
             canvas: document.getElementById('snake-canvas'), music: document.getElementById('snake-music'), ctx: null, tileSize: 20, snake: [], food: {}, direction: 'right', newDirection: 'right', score: 0, gameOver: false, paused: false, loop: null, lastUpdateTime: 0, updateInterval: 120,
@@ -481,7 +536,7 @@ const db = firebase.firestore();
                     if(b.x > this.player.x && b.x < this.player.x+this.player.width && b.y > this.player.y && b.y < this.player.y + this.player.height) {
                         this.invaderBullets.splice(i, 1);
                         this.lives--;
-                        this.player.x = this.canvas.width / 2 - 25; // Reset player position
+                        this.player.x = this.canvas.width / 2 - 25;
                         if (this.lives <= 0) {
                             this.gameOver = true; playGameOverSound();
                         }
@@ -571,10 +626,13 @@ const db = firebase.firestore();
             togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) { this.reset(); this.start(); return; } if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
         };
 
-        // --- MAIN EVENT LISTENER ---
+        // --- HLAVNÍ EVENT LISTENERY ---
         document.addEventListener('DOMContentLoaded', () => {
+            // Inicializace her
             const gameWindows = document.querySelectorAll('.game-window');
             Object.values(gameInstances).forEach(game => game.init());
+
+            // Kliknutí na herní okno
             gameWindows.forEach(win => {
                 win.addEventListener('click', () => {
                     const gameName = win.dataset.game;
@@ -608,41 +666,57 @@ const db = firebase.firestore();
                     });
                 });
             });
+
+            // Touch controls
+            function simulateKeyEvent(type, key) {
+                const event = new KeyboardEvent(type, { 'key': key, 'bubbles': true });
+                window.dispatchEvent(event);
+            }
+            const touchControls = {
+                'btn-left': 'ArrowLeft', 'btn-right': 'ArrowRight',
+                'btn-up': 'ArrowUp', 'btn-down': 'ArrowDown',
+                'btn-action': ' '
+            };
+            for (const [btnId, key] of Object.entries(touchControls)) {
+                const button = document.getElementById(btnId);
+                if (button) {
+                    button.addEventListener('touchstart', (e) => { e.preventDefault(); simulateKeyEvent('keydown', key); }, { passive: false });
+                    button.addEventListener('touchend', (e) => { e.preventDefault(); simulateKeyEvent('keyup', key); }, { passive: false });
+                }
+            }
+
+            // Firebase přihlašování
+            const loginBtn = document.getElementById('login-btn');
+            const logoutBtn = document.getElementById('logout-btn');
+            const userInfo = document.getElementById('user-info');
+            const userNameEl = document.getElementById('user-name');
+
+            loginBtn.addEventListener('click', () => {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                auth.signInWithPopup(provider).catch(error => console.error("Chyba při přihlašování:", error));
+            });
+
+            logoutBtn.addEventListener('click', () => {
+                auth.signOut();
+            });
+
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    loginBtn.classList.add('hidden');
+                    userInfo.classList.remove('hidden');
+                    userNameEl.textContent = user.displayName;
+                } else {
+                    loginBtn.classList.remove('hidden');
+                    userInfo.classList.add('hidden');
+                    userNameEl.textContent = '';
+                }
+            });
+            
+            // Načtení všech žebříčků
+            Object.keys(gameInstances).forEach(gameName => {
+                displayLeaderboard(gameName);
+            });
         });
-    const loginBtn = document.getElementById('login-btn');
-    const logoutBtn = document.getElementById('logout-btn');
-    const userSection = document.getElementById('user-section');
-    const userInfo = document.getElementById('user-info');
-    const userNameEl = document.getElementById('user-name');
-
-    // Funkce pro přihlášení
-    loginBtn.addEventListener('click', () => {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        auth.signInWithPopup(provider).catch(error => {
-            console.error("Chyba při přihlašování:", error);
-        });
-    });
-
-    // Funkce pro odhlášení
-    logoutBtn.addEventListener('click', () => {
-        auth.signOut();
-    });
-
-    // Sledování stavu přihlášení
-    auth.onAuthStateChanged(user => {
-        if (user) {
-            // Uživatel je přihlášen
-            loginBtn.classList.add('hidden');
-            userInfo.classList.remove('hidden');
-            userNameEl.textContent = user.displayName;
-        } else {
-            // Uživatel je odhlášen
-            loginBtn.classList.remove('hidden');
-            userInfo.classList.add('hidden');
-            userNameEl.textContent = '';
-        }
-    });
-});
     </script>
     <script src="/_vercel/insights/script.js"></script>
 </body>
