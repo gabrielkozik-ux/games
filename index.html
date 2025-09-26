@@ -50,6 +50,9 @@
         .game-window.active .leaderboard { display: none; }
         .game-window.active canvas { display: block; }
         
+        .leaderboard {
+    display: none; /* NOVÝ ŘÁDEK: Skryje žebříčky ve výchozím stavu */
+}
         .leaderboard-list li {
             display: flex;
             justify-content: space-between;
@@ -703,16 +706,23 @@
             });
 
             auth.onAuthStateChanged(user => {
-                if (user) {
-                    loginBtn.classList.add('hidden');
-                    userInfo.classList.remove('hidden');
-                    userNameEl.textContent = user.displayName;
-                } else {
-                    loginBtn.classList.remove('hidden');
-                    userInfo.classList.add('hidden');
-                    userNameEl.textContent = '';
-                }
-            });
+    const leaderboards = document.querySelectorAll('.leaderboard'); // Najdeme všechny žebříčky
+
+    if (user) {
+        // Uživatel je přihlášen
+        loginBtn.classList.add('hidden');
+        userInfo.classList.remove('hidden');
+        userNameEl.textContent = user.displayName;
+        leaderboards.forEach(lb => lb.style.display = 'block'); // Zobrazíme všechny žebříčky
+
+    } else {
+        // Uživatel je odhlášen
+        loginBtn.classList.remove('hidden');
+        userInfo.classList.add('hidden');
+        userNameEl.textContent = '';
+        leaderboards.forEach(lb => lb.style.display = 'none'); // Skryjeme všechny žebříčky
+    }
+});
             
             // Načtení všech žebříčků
             Object.keys(gameInstances).forEach(gameName => {
