@@ -119,6 +119,11 @@
             }
         }
     </style>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
+
 </head>
 <body class="bg-gray-800 text-white p-4 sm:p-8 flex flex-col min-h-screen noselect">
 
@@ -128,6 +133,13 @@
         <h1 class="text-4xl md:text-6xl font-bungee tracking-wider">Retro Herní Arkáda</h1>
         <p class="text-gray-300 mt-2 font-vt323 text-xl">Klikni na hru pro spuštění / pauzu</p>
         <p class="text-gray-400 mt-4 font-vt323 text-lg">Příjemnou zábavu ti přeje Gabriel</p>
+    <div id="user-section" class="mt-4">
+    <button id="login-btn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded">Přihlásit se přes Google</button>
+    <div id="user-info" class="hidden">
+        <p>Přihlášen jako: <span id="user-name"></span></p>
+        <button id="logout-btn" class="text-sm text-red-400">Odhlásit se</button>
+    </div>
+</div>
     </header>
 
     <main class="flex-grow grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
@@ -202,6 +214,20 @@
     <audio id="victory-sound"><source src="victory.mp3" type="audio/mpeg"></audio>
 
     <script>
+// HNED NA ZAČÁTEK TVÉHO SCRIPTU
+const firebaseConfig = {
+  apiKey: "AIzaSyBWJAbTCutFX3sU_KLt6XSCvhJ_Vl5trjo",
+  authDomain: "retro-herni-arkada.firebaseapp.com",
+  projectId: "retro-herni-arkada",
+  storageBucket: "retro-herni-arkada.firebasestorage.app",
+  messagingSenderId: "15367501595",
+  appId: "1:15367501595:web:f8323a29e3c24a6dd985be"
+};
+// Inicializace Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+        
         document.addEventListener('DOMContentLoaded', () => {
             function simulateKeyEvent(type, key) {
                 const event = new KeyboardEvent(type, { 'key': key, 'bubbles': true });
@@ -220,6 +246,35 @@
                 }
             }
         });
+
+        function saveCurrentScore() {
+    const user = auth.currentUser;
+    // Ukládáme, jen pokud je uživatel přihlášen, hra je aktivní a skóre je větší než 0
+    if (user && activeGame && gameInstances[activeGame].score > 0) {
+        const gameName = activeGame;
+        let scoreToSave = gameInstances[activeGame].score;
+
+        // Speciální případ pro Dino hru, kde je skóre jiné
+        if (gameName === 'dino') {
+            scoreToSave = Math.floor(scoreToSave / 5);
+        }
+
+        db.collection("scores").add({
+            userId: user.uid,
+            userName: user.displayName,
+            game: gameName,
+            score: scoreToSave,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        })
+        .then(() => {
+            console.log(`Skóre ${scoreToSave} pro hru ${gameName} bylo uloženo!`);
+            // Zde můžeš v budoucnu přidat i nějakou hezkou notifikaci pro hráče
+        })
+        .catch((error) => {
+            console.error("Chyba při ukládání skóre: ", error);
+        });
+    }
+}
 
         let activeGame = null;
         const gameInstances = {};
@@ -256,17 +311,19 @@
         }
 
         function playGameOverSound() {
-            stopAllMusic();
-            gameOverSound.currentTime = 0;
-            gameOverSound.play();
-            document.body.style.overflow = 'auto';
+    stopAllMusic();
+    gameOverSound.currentTime = 0;
+    gameOverSound.play();
+    document.body.style.overflow = 'auto';
+    saveCurrentScore(); // <-- PŘIDALI JSME VOLÁNÍ ZDE
         }
 
         function playVictorySound() {
-            stopAllMusic();
-            victorySound.currentTime = 0;
-            victorySound.play();
-            document.body.style.overflow = 'auto';
+    stopAllMusic();
+    victorySound.currentTime = 0;
+    victorySound.play();
+    document.body.style.overflow = 'auto';
+    saveCurrentScore(); // <-- A TAKÉ ZDE (to je pro Pong)
         }
 
         function playCountdown(game, callback) {
@@ -552,6 +609,40 @@
                 });
             });
         });
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userSection = document.getElementById('user-section');
+    const userInfo = document.getElementById('user-info');
+    const userNameEl = document.getElementById('user-name');
+
+    // Funkce pro přihlášení
+    loginBtn.addEventListener('click', () => {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider).catch(error => {
+            console.error("Chyba při přihlašování:", error);
+        });
+    });
+
+    // Funkce pro odhlášení
+    logoutBtn.addEventListener('click', () => {
+        auth.signOut();
+    });
+
+    // Sledování stavu přihlášení
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            // Uživatel je přihlášen
+            loginBtn.classList.add('hidden');
+            userInfo.classList.remove('hidden');
+            userNameEl.textContent = user.displayName;
+        } else {
+            // Uživatel je odhlášen
+            loginBtn.classList.remove('hidden');
+            userInfo.classList.add('hidden');
+            userNameEl.textContent = '';
+        }
+    });
+});
     </script>
     <script src="/_vercel/insights/script.js"></script>
 </body>
