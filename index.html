@@ -367,11 +367,13 @@
         const victorySound = document.getElementById('victory-sound');
 
         muteButton.addEventListener('click', () => {
-            isMuted = !isMuted;
-            allAudio.forEach(audio => audio.muted = isMuted);
-            muteButton.textContent = isMuted ? '🔇' : '🔊';
-        });
-
+    isMuted = !isMuted;
+    allAudio.forEach(audio => audio.muted = isMuted);
+    muteButton.textContent = isMuted ? '🔇' : '🔊';
+    
+    // Uložíme nový stav do localStorage
+    localStorage.setItem('isMuted', isMuted);
+});
         window.addEventListener('keydown', (e) => { 
             if (e.key === ' ' && activeGame) e.preventDefault();
             keysPressed[e.key] = true; 
@@ -649,6 +651,16 @@
 
         // --- HLAVNÍ EVENT LISTENER PO NAČTENÍ STRÁNKY ---
         document.addEventListener('DOMContentLoaded', () => {
+            // Načtení a nastavení zvuku z localStorage
+    const savedMuteState = localStorage.getItem('isMuted');
+    if (savedMuteState === 'true') {
+        isMuted = true;
+        allAudio.forEach(audio => audio.muted = true);
+        muteButton.textContent = '🔇';
+    } else {
+        isMuted = false; // Pro jistotu, pokud by v localStorage nic nebylo
+    }
+            
             // Inicializace her
             const gameWindows = document.querySelectorAll('.game-window');
             Object.values(gameInstances).forEach(game => game.init());
