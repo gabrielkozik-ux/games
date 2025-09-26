@@ -283,46 +283,53 @@
         // --- FUNKCE PRO FIREBASE ---
         
         async function displayLeaderboard(gameName) {
-            const gameWindow = document.querySelector(`.game-window[data-game="${gameName}"]`);
-            const listElement = gameWindow.querySelector('.leaderboard-list');
-            if (!listElement) return;
+    const gameWindow = document.querySelector(`.game-window[data-game="${gameName}"]`);
+    const listElement = gameWindow.querySelector('.leaderboard-list');
+    if (!listElement) return;
 
-            listElement.innerHTML = '<li>Načítání...</li>';
+    const currentUser = auth.currentUser; // Získáme aktuálního uživatele
+    listElement.innerHTML = '<li>Načítání...</li>';
 
-            try {
-                const querySnapshot = await db.collection("scores")
-                    .where("game", "==", gameName)
-                    .orderBy("score", "desc")
-                    .limit(5)
-                    .get();
+    try {
+        const querySnapshot = await db.collection("scores")
+            .where("game", "==", gameName)
+            .orderBy("score", "desc")
+            .limit(5)
+            .get();
 
-                if (querySnapshot.empty) {
-                    listElement.innerHTML = '<li>Zatím žádné skóre. Buď první!</li>';
-                    return;
-                }
-
-                listElement.innerHTML = '';
-                let rank = 1;
-                querySnapshot.forEach(doc => {
-                    const data = doc.data();
-                    const listItem = document.createElement('li');
-                    
-                    if (rank === 1) {
-                        listItem.innerHTML = `<span>👑 ${data.userName}</span> <span>${data.score}</span>`;
-                        listItem.style.fontWeight = 'bold';
-                        listItem.style.color = '#b45309';
-                    } else {
-                        listItem.innerHTML = `<span>${rank}. ${data.userName}</span> <span>${data.score}</span>`;
-                    }
-
-                    listElement.appendChild(listItem);
-                    rank++;
-                });
-            } catch (error) {
-                console.error(`Chyba při načítání žebříčku pro ${gameName}:`, error);
-                listElement.innerHTML = '<li>Chyba načítání dat.</li>';
-            }
+        if (querySnapshot.empty) {
+            listElement.innerHTML = '<li>Zatím žádné skóre. Buď první!</li>';
+            return;
         }
+
+        listElement.innerHTML = '';
+        let rank = 1;
+        querySnapshot.forEach(doc => {
+            const data = doc.data();
+            const listItem = document.createElement('li');
+
+            let deleteButtonHTML = '';
+            // Pokud je uživatel přihlášen a ID záznamu se shoduje s jeho ID, přidej tlačítko
+            if (currentUser && data.userId === currentUser.uid) {
+                deleteButtonHTML = `<button data-id="${doc.id}" class="delete-score-btn text-red-500 font-bold ml-2">X</button>`;
+            }
+
+            let rankIcon = `${rank}.`;
+            if (rank === 1) {
+                rankIcon = '👑';
+                listItem.style.fontWeight = 'bold';
+                listItem.style.color = '#b45309';
+            }
+
+            listItem.innerHTML = `<span>${rankIcon} ${data.userName}</span> <span>${data.score}${deleteButtonHTML}</span>`;
+            listElement.appendChild(listItem);
+            rank++;
+        });
+    } catch (error) {
+        console.error(`Chyba při načítání žebříčku pro ${gameName}:`, error);
+        listElement.innerHTML = '<li>Chyba načítání dat.</li>';
+    }
+}
         
         function saveCurrentScore() {
             const user = auth.currentUser;
@@ -360,11 +367,13 @@
         const victorySound = document.getElementById('victory-sound');
 
         muteButton.addEventListener('click', () => {
-            isMuted = !isMuted;
-            allAudio.forEach(audio => audio.muted = isMuted);
-            muteButton.textContent = isMuted ? '🔇' : '🔊';
-        });
-
+    isMuted = !isMuted;
+    allAudio.forEach(audio => audio.muted = isMuted);
+    muteButton.textContent = isMuted ? '🔇' : '🔊';
+    
+    // Uložíme nový stav do localStorage
+    localStorage.setItem('isMuted', isMuted);
+});
         window.addEventListener('keydown', (e) => { 
             if (e.key === ' ' && activeGame) e.preventDefault();
             keysPressed[e.key] = true; 
@@ -642,45 +651,59 @@
 
         // --- HLAVNÍ EVENT LISTENER PO NAČTENÍ STRÁNKY ---
         document.addEventListener('DOMContentLoaded', () => {
+            // Načtení a nastavení zvuku z localStorage
+    const savedMuteState = localStorage.getItem('isMuted');
+    if (savedMuteState === 'true') {
+        isMuted = true;
+        allAudio.forEach(audio => audio.muted = true);
+        muteButton.textContent = '🔇';
+    } else {
+        isMuted = false; // Pro jistotu, pokud by v localStorage nic nebylo
+    }
+            
             // Inicializace her
             const gameWindows = document.querySelectorAll('.game-window');
             Object.values(gameInstances).forEach(game => game.init());
 
             // Kliknutí na herní okno
-            gameWindows.forEach(win => {
-                win.addEventListener('click', () => {
-                    const gameName = win.dataset.game;
-                    const game = gameInstances[gameName];
-                    
-                    if (game.gameOver || (game.hasOwnProperty('gameWon') && game.gameWon)) {
-                        game.reset();
-                        playCountdown(game, () => game.start());
-                        return;
-                    }
-                    
-                    if (gameName === activeGame) {
-                        game.togglePause();
-                        return;
-                    }
-                    if (activeGame && gameInstances[activeGame]) {
-                        gameInstances[activeGame].stop();
-                        document.querySelector(`[data-game="${activeGame}"]`).classList.remove('active');
-                    }
-                    document.body.style.overflow = 'hidden';
-                    activeGame = gameName;
-                    win.classList.add('active');
-                    
-                    game.canvas.width = game.canvas.offsetWidth;
-                    game.canvas.height = game.canvas.offsetHeight;
-                    game.reset();
-                    game.draw();
-                    
-                    playCountdown(game, () => {
-                        game.start();
-                    });
-                });
-            });
+gameWindows.forEach(win => {
+    win.addEventListener('click', (e) => { // Přidali jsme "(e)"
+        // ZKONTROLUJEME, JESTLI SE NEKLIKLO NA MAZACÍ TLAČÍTKO
+        if (e.target.classList.contains('delete-score-btn')) {
+            return; // Pokud ano, nic neděláme a hru nespustíme
+        }
 
+        const gameName = win.dataset.game;
+        const game = gameInstances[gameName];
+        
+        if (game.gameOver || (game.hasOwnProperty('gameWon') && game.gameWon)) {
+            game.reset();
+            playCountdown(game, () => game.start());
+            return;
+        }
+        
+        if (gameName === activeGame) {
+            game.togglePause();
+            return;
+        }
+        if (activeGame && gameInstances[activeGame]) {
+            gameInstances[activeGame].stop();
+            document.querySelector(`[data-game="${activeGame}"]`).classList.remove('active');
+        }
+        document.body.style.overflow = 'hidden';
+        activeGame = gameName;
+        win.classList.add('active');
+        
+        game.canvas.width = game.canvas.offsetWidth;
+        game.canvas.height = game.canvas.offsetHeight;
+        game.reset();
+        game.draw();
+        
+        playCountdown(game, () => {
+            game.start();
+        });
+    });
+});
             // Touch controls
             function simulateKeyEvent(type, key) {
                 const event = new KeyboardEvent(type, { 'key': key, 'bubbles': true });
@@ -724,6 +747,9 @@
         userNameEl.textContent = user.displayName;
         leaderboards.forEach(lb => lb.style.display = 'block'); // Zobrazíme všechny žebříčky
 
+         // PŘIDANÝ KÓD: Znovu načteme žebříčky, aby se objevila tlačítka pro mazání
+        Object.keys(gameInstances).forEach(displayLeaderboard);
+
     } else {
         // Uživatel je odhlášen
         loginBtn.classList.remove('hidden');
@@ -736,6 +762,28 @@
             // Načtení všech žebříčků
             Object.keys(gameInstances).forEach(gameName => {
                 displayLeaderboard(gameName);
+            });
+            // Mazání skóre
+            document.querySelector('main').addEventListener('click', async (e) => {
+                // Zkontrolujeme, jestli se kliklo na tlačítko s třídou 'delete-score-btn'
+                if (e.target.classList.contains('delete-score-btn')) {
+
+                            e.stopPropagation(); // <-- PŘIDÁN TENTO ŘÁDEK
+
+                    const scoreId = e.target.dataset.id;
+                    const gameName = e.target.closest('.game-window').dataset.game;
+
+                    if (confirm("Opravdu chceš smazat tento záznam?")) {
+                        try {
+                            await db.collection('scores').doc(scoreId).delete();
+                            console.log("Záznam smazán!");
+                            displayLeaderboard(gameName); // Znovu načteme žebříček, aby změna byla vidět
+                        } catch (error) {
+                            console.error("Chyba při mazání záznamu:", error);
+                            alert("Nepodařilo se smazat záznam.");
+                        }
+                    }
+                }
             });
         });
     </script>
