@@ -53,15 +53,24 @@
         .leaderboard {
     display: none; /* NOVÝ ŘÁDEK: Skryje žebříčky ve výchozím stavu */
 }
-        .leaderboard-list li {
-            display: flex;
-            justify-content: space-between;
-            padding: 2px 4px;
-            border-radius: 4px;
-        }
-        .leaderboard-list li:nth-child(odd) {
-            background-color: rgba(0,0,0,0.05);
-        }
+        .leaderboard h3 {
+    font-size: 1.125rem; /* Tailwind třída text-lg */
+    margin-bottom: 0.25rem; /* Menší mezera pod nadpisem */
+    text-shadow: none; /* Vypneme původní stín, aby byl text čistší */
+}
+.leaderboard-list {
+    line-height: 1.3; /* Snížíme výšku řádku */
+}
+.leaderboard-list li {
+    font-size: 1rem; /* Zmenšíme písmo z text-lg na text-base */
+    padding: 1px 4px;
+    display: flex;
+    justify-content: space-between;
+    border-radius: 4px;
+}
+.leaderboard-list li:nth-child(odd) {
+    background-color: rgba(0,0,0,0.05);
+}
 
         .countdown-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
