@@ -751,6 +751,9 @@
             document.querySelector('main').addEventListener('click', async (e) => {
                 // Zkontrolujeme, jestli se kliklo na tlačítko s třídou 'delete-score-btn'
                 if (e.target.classList.contains('delete-score-btn')) {
+
+                            e.stopPropagation(); // <-- PŘIDÁN TENTO ŘÁDEK
+
                     const scoreId = e.target.dataset.id;
                     const gameName = e.target.closest('.game-window').dataset.game;
 
