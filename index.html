@@ -453,21 +453,45 @@
             init() { this.ctx = this.canvas.getContext('2d'); },
             reset() { this.paddleWidth = this.canvas.width / 80; this.paddleHeight = this.canvas.height / 6; this.ball = { x: this.canvas.width / 2, y: this.canvas.height / 2, size: this.canvas.width / 100, dx: 5, dy: 5 }; this.player = { x: 10, y: this.canvas.height / 2 - this.paddleHeight / 2, width: this.paddleWidth, height: this.paddleHeight, score: 0, speed: 8 }; this.ai = { x: this.canvas.width - 10 - this.paddleWidth, y: this.canvas.height / 2 - this.paddleHeight / 2, width: this.paddleWidth, height: this.paddleHeight, score: 0, speed: 4 }; this.gameOver = false; this.gameWon = false; this.music.currentTime = 0; },
             update() {
-                if (this.paused || this.gameOver || this.gameWon) return;
-                if (keysPressed['ArrowUp']) this.player.y -= this.player.speed; if (keysPressed['ArrowDown']) this.player.y += this.player.speed;
-                if (this.player.y < 0) this.player.y = 0; if (this.player.y + this.player.height > this.canvas.height) this.player.y = this.canvas.height - this.player.height;
-                this.ball.x += this.ball.dx; this.ball.y += this.ball.dy;
-                if (this.ball.y + this.ball.size > this.canvas.height || this.ball.y - this.ball.size < 0) this.ball.dy *= -1;
-                if (this.ball.x - this.ball.size < this.player.x + this.player.width && this.ball.x > this.player.x && this.ball.y > this.player.y && this.ball.y < this.player.y + this.player.height) this.ball.dx *= -1.1;
-                if (this.ball.x + this.ball.size > this.ai.x && this.ball.x < this.ai.x + this.ai.width && this.ball.y > this.ai.y && this.ball.y < this.ai.y + this.ai.height) this.ball.dx *= -1.1;
-                if (this.ball.x + this.ball.size < 0) { this.ai.score++; this.resetBall(); }
-                if (this.ball.x - this.ball.size > this.canvas.width) { this.player.score++; this.resetBall(); }
-                const aiCenter = this.ai.y + this.ai.height / 2;
-                if (aiCenter < this.ball.y - 35) this.ai.y += this.ai.speed; else if (aiCenter > this.ball.y + 35) this.ai.y -= this.ai.speed;
-                if (this.ai.y < 0) this.ai.y = 0; if (this.ai.y + this.ai.height > this.canvas.height) this.ai.y = this.canvas.height - this.ai.height;
-                if (this.ai.score >= this.maxScore) { this.gameOver = true; playGameOverSound(); }
-                if (this.player.score >= this.maxScore) { this.gameWon = true; playVictorySound(); }
-            },
+        if (this.paused || this.gameOver || this.gameWon) return;
+
+        // Konec hry - když vyhraje AI
+        if (this.ai.score >= this.maxScore) {
+            this.gameOver = true;
+            playGameOverSound(); // OKAMŽITĚ ZAVOLÁME ULOŽENÍ SKÓRE
+            return; // Ukončíme funkci
+        }
+        // Konec hry - když vyhraješ ty
+        if (this.player.score >= this.maxScore) {
+            this.gameWon = true;
+            playVictorySound(); // OKAMŽITĚ ZAVOLÁME ULOŽENÍ SKÓRE
+            return; // Ukončíme funkci
+        }
+
+        if (keysPressed['ArrowUp']) this.player.y -= this.player.speed;
+        if (keysPressed['ArrowDown']) this.player.y += this.player.speed;
+
+        if (this.player.y < 0) this.player.y = 0;
+        if (this.player.y + this.player.height > this.canvas.height) this.player.y = this.canvas.height - this.player.height;
+
+        this.ball.x += this.ball.dx;
+        this.ball.y += this.ball.dy;
+
+        if (this.ball.y + this.ball.size > this.canvas.height || this.ball.y - this.ball.size < 0) this.ball.dy *= -1;
+
+        if (this.ball.x - this.ball.size < this.player.x + this.player.width && this.ball.x > this.player.x && this.ball.y > this.player.y && this.ball.y < this.player.y + this.player.height) this.ball.dx *= -1.1;
+        if (this.ball.x + this.ball.size > this.ai.x && this.ball.x < this.ai.x + this.ai.width && this.ball.y > this.ai.y && this.ball.y < this.ai.y + this.ai.height) this.ball.dx *= -1.1;
+
+        if (this.ball.x + this.ball.size < 0) { this.ai.score++; this.resetBall(); }
+        if (this.ball.x - this.ball.size > this.canvas.width) { this.player.score++; this.resetBall(); }
+
+        const aiCenter = this.ai.y + this.ai.height / 2;
+        if (aiCenter < this.ball.y - 35) this.ai.y += this.ai.speed;
+        else if (aiCenter > this.ball.y + 35) this.ai.y -= this.ai.speed;
+
+        if (this.ai.y < 0) this.ai.y = 0;
+        if (this.ai.y + this.ai.height > this.canvas.height) this.ai.y = this.canvas.height - this.ai.height;
+    },
             resetBall() { this.ball.x = this.canvas.width / 2; this.ball.y = this.canvas.height / 2; this.ball.dx = (Math.random() > 0.5 ? 1 : -1) * 5; this.ball.dy = (Math.random() > 0.5 ? 1 : -1) * 5; },
             draw() {
                 this.ctx.fillStyle = '#0f172a'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
