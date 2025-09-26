@@ -283,46 +283,53 @@
         // --- FUNKCE PRO FIREBASE ---
         
         async function displayLeaderboard(gameName) {
-            const gameWindow = document.querySelector(`.game-window[data-game="${gameName}"]`);
-            const listElement = gameWindow.querySelector('.leaderboard-list');
-            if (!listElement) return;
+    const gameWindow = document.querySelector(`.game-window[data-game="${gameName}"]`);
+    const listElement = gameWindow.querySelector('.leaderboard-list');
+    if (!listElement) return;
 
-            listElement.innerHTML = '<li>Načítání...</li>';
+    const currentUser = auth.currentUser; // Získáme aktuálního uživatele
+    listElement.innerHTML = '<li>Načítání...</li>';
 
-            try {
-                const querySnapshot = await db.collection("scores")
-                    .where("game", "==", gameName)
-                    .orderBy("score", "desc")
-                    .limit(5)
-                    .get();
+    try {
+        const querySnapshot = await db.collection("scores")
+            .where("game", "==", gameName)
+            .orderBy("score", "desc")
+            .limit(5)
+            .get();
 
-                if (querySnapshot.empty) {
-                    listElement.innerHTML = '<li>Zatím žádné skóre. Buď první!</li>';
-                    return;
-                }
-
-                listElement.innerHTML = '';
-                let rank = 1;
-                querySnapshot.forEach(doc => {
-                    const data = doc.data();
-                    const listItem = document.createElement('li');
-                    
-                    if (rank === 1) {
-                        listItem.innerHTML = `<span>👑 ${data.userName}</span> <span>${data.score}</span>`;
-                        listItem.style.fontWeight = 'bold';
-                        listItem.style.color = '#b45309';
-                    } else {
-                        listItem.innerHTML = `<span>${rank}. ${data.userName}</span> <span>${data.score}</span>`;
-                    }
-
-                    listElement.appendChild(listItem);
-                    rank++;
-                });
-            } catch (error) {
-                console.error(`Chyba při načítání žebříčku pro ${gameName}:`, error);
-                listElement.innerHTML = '<li>Chyba načítání dat.</li>';
-            }
+        if (querySnapshot.empty) {
+            listElement.innerHTML = '<li>Zatím žádné skóre. Buď první!</li>';
+            return;
         }
+
+        listElement.innerHTML = '';
+        let rank = 1;
+        querySnapshot.forEach(doc => {
+            const data = doc.data();
+            const listItem = document.createElement('li');
+
+            let deleteButtonHTML = '';
+            // Pokud je uživatel přihlášen a ID záznamu se shoduje s jeho ID, přidej tlačítko
+            if (currentUser && data.userId === currentUser.uid) {
+                deleteButtonHTML = `<button data-id="${doc.id}" class="delete-score-btn text-red-500 font-bold ml-2">X</button>`;
+            }
+
+            let rankIcon = `${rank}.`;
+            if (rank === 1) {
+                rankIcon = '👑';
+                listItem.style.fontWeight = 'bold';
+                listItem.style.color = '#b45309';
+            }
+
+            listItem.innerHTML = `<span>${rankIcon} ${data.userName}</span> <span>${data.score}${deleteButtonHTML}</span>`;
+            listElement.appendChild(listItem);
+            rank++;
+        });
+    } catch (error) {
+        console.error(`Chyba při načítání žebříčku pro ${gameName}:`, error);
+        listElement.innerHTML = '<li>Chyba načítání dat.</li>';
+    }
+}
         
         function saveCurrentScore() {
             const user = auth.currentUser;
@@ -736,6 +743,25 @@
             // Načtení všech žebříčků
             Object.keys(gameInstances).forEach(gameName => {
                 displayLeaderboard(gameName);
+            });
+            // Mazání skóre
+            document.querySelector('main').addEventListener('click', async (e) => {
+                // Zkontrolujeme, jestli se kliklo na tlačítko s třídou 'delete-score-btn'
+                if (e.target.classList.contains('delete-score-btn')) {
+                    const scoreId = e.target.dataset.id;
+                    const gameName = e.target.closest('.game-window').dataset.game;
+
+                    if (confirm("Opravdu chceš smazat tento záznam?")) {
+                        try {
+                            await db.collection('scores').doc(scoreId).delete();
+                            console.log("Záznam smazán!");
+                            displayLeaderboard(gameName); // Znovu načteme žebříček, aby změna byla vidět
+                        } catch (error) {
+                            console.error("Chyba při mazání záznamu:", error);
+                            alert("Nepodařilo se smazat záznam.");
+                        }
+                    }
+                }
             });
         });
     </script>
