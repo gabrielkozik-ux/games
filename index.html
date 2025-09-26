@@ -654,40 +654,44 @@
             Object.values(gameInstances).forEach(game => game.init());
 
             // Kliknutí na herní okno
-            gameWindows.forEach(win => {
-                win.addEventListener('click', () => {
-                    const gameName = win.dataset.game;
-                    const game = gameInstances[gameName];
-                    
-                    if (game.gameOver || (game.hasOwnProperty('gameWon') && game.gameWon)) {
-                        game.reset();
-                        playCountdown(game, () => game.start());
-                        return;
-                    }
-                    
-                    if (gameName === activeGame) {
-                        game.togglePause();
-                        return;
-                    }
-                    if (activeGame && gameInstances[activeGame]) {
-                        gameInstances[activeGame].stop();
-                        document.querySelector(`[data-game="${activeGame}"]`).classList.remove('active');
-                    }
-                    document.body.style.overflow = 'hidden';
-                    activeGame = gameName;
-                    win.classList.add('active');
-                    
-                    game.canvas.width = game.canvas.offsetWidth;
-                    game.canvas.height = game.canvas.offsetHeight;
-                    game.reset();
-                    game.draw();
-                    
-                    playCountdown(game, () => {
-                        game.start();
-                    });
-                });
-            });
+gameWindows.forEach(win => {
+    win.addEventListener('click', (e) => { // Přidali jsme "(e)"
+        // ZKONTROLUJEME, JESTLI SE NEKLIKLO NA MAZACÍ TLAČÍTKO
+        if (e.target.classList.contains('delete-score-btn')) {
+            return; // Pokud ano, nic neděláme a hru nespustíme
+        }
 
+        const gameName = win.dataset.game;
+        const game = gameInstances[gameName];
+        
+        if (game.gameOver || (game.hasOwnProperty('gameWon') && game.gameWon)) {
+            game.reset();
+            playCountdown(game, () => game.start());
+            return;
+        }
+        
+        if (gameName === activeGame) {
+            game.togglePause();
+            return;
+        }
+        if (activeGame && gameInstances[activeGame]) {
+            gameInstances[activeGame].stop();
+            document.querySelector(`[data-game="${activeGame}"]`).classList.remove('active');
+        }
+        document.body.style.overflow = 'hidden';
+        activeGame = gameName;
+        win.classList.add('active');
+        
+        game.canvas.width = game.canvas.offsetWidth;
+        game.canvas.height = game.canvas.offsetHeight;
+        game.reset();
+        game.draw();
+        
+        playCountdown(game, () => {
+            game.start();
+        });
+    });
+});
             // Touch controls
             function simulateKeyEvent(type, key) {
                 const event = new KeyboardEvent(type, { 'key': key, 'bubbles': true });
