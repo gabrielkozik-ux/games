@@ -731,6 +731,9 @@
         userNameEl.textContent = user.displayName;
         leaderboards.forEach(lb => lb.style.display = 'block'); // Zobrazíme všechny žebříčky
 
+         // PŘIDANÝ KÓD: Znovu načteme žebříčky, aby se objevila tlačítka pro mazání
+        Object.keys(gameInstances).forEach(displayLeaderboard);
+
     } else {
         // Uživatel je odhlášen
         loginBtn.classList.remove('hidden');
