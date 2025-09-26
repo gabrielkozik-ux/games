@@ -332,32 +332,43 @@
 }
         
         function saveCurrentScore() {
-            const user = auth.currentUser;
-            if (user && activeGame && gameInstances[activeGame].score > 0) {
-                const gameName = activeGame;
-                let scoreToSave = gameInstances[activeGame].score;
+    const user = auth.currentUser;
+    // Ukládáme, jen pokud je uživatel přihlášen a hra je aktivní
+    if (user && activeGame) {
+        const gameName = activeGame;
+        let scoreToSave = 0; // Výchozí hodnota
 
-                if (gameName === 'dino') {
-                    scoreToSave = Math.floor(scoreToSave / 5);
-                }
-
-                db.collection("scores").add({
-                    userId: user.uid,
-                    userName: user.displayName,
-                    game: gameName,
-                    score: scoreToSave,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                })
-                .then(() => {
-                    console.log(`Skóre ${scoreToSave} pro hru ${gameName} bylo uloženo!`);
-                    displayLeaderboard(gameName);
-                })
-                .catch((error) => {
-                    console.error("Chyba při ukládání skóre: ", error);
-                });
-            }
+        // Zkontrolujeme, o jakou hru jde, a vezmeme správné skóre
+        if (gameName === 'pong') {
+            scoreToSave = gameInstances[gameName].player.score; // Pro Pong bereme skóre hráče
+        } else {
+            scoreToSave = gameInstances[gameName].score; // Pro ostatní hry bereme obecné skóre
         }
 
+        // Speciální případ pro Dino hru
+        if (gameName === 'dino' && scoreToSave > 0) {
+            scoreToSave = Math.floor(scoreToSave / 5);
+        }
+
+        // Uložíme, jen pokud je skóre větší než 0
+        if (scoreToSave > 0) {
+            db.collection("scores").add({
+                userId: user.uid,
+                userName: user.displayName,
+                game: gameName,
+                score: scoreToSave,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            })
+            .then(() => {
+                console.log(`Skóre ${scoreToSave} pro hru ${gameName} bylo uloženo!`);
+                displayLeaderboard(gameName);
+            })
+            .catch((error) => {
+                console.error("Chyba při ukládání skóre: ", error);
+            });
+        }
+    }
+}
         // --- HERNÍ LOGIKA ---
 
         const allAudio = document.querySelectorAll('audio');
