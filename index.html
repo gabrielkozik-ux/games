@@ -47,10 +47,10 @@
         .game-window h2 { transition: opacity 0.3s ease; }
         .game-window canvas { display: none; width: 100%; height: 100%; }
         .game-window.active h2 { display: none; }
-        .game-window.active .leaderboard { display: none; } /* PŘIDÁNO: Schová žebříček při hře */
+        .game-window.active .leaderboard { display: none; }
         .game-window.active canvas { display: block; }
         
-        .leaderboard-list li { /* PŘIDÁNO: Styly pro položky žebříčku */
+        .leaderboard-list li {
             display: flex;
             justify-content: space-between;
             padding: 2px 4px;
@@ -249,6 +249,7 @@
     <audio id="victory-sound"><source src="victory.mp3" type="audio/mpeg"></audio>
 
     <script>
+        // --- INICIALIZACE FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyBWJAbTCutFX3sU_KLt6XSCvhJ_Vl5trjo",
             authDomain: "retro-herni-arkada.firebaseapp.com",
@@ -261,6 +262,7 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
+        // --- GLOBÁLNÍ PROMĚNNÉ ---
         let activeGame = null;
         const gameInstances = {};
         const keysPressed = {};
@@ -329,7 +331,7 @@
                 })
                 .then(() => {
                     console.log(`Skóre ${scoreToSave} pro hru ${gameName} bylo uloženo!`);
-                    displayLeaderboard(gameName); // Aktualizace žebříčku
+                    displayLeaderboard(gameName);
                 })
                 .catch((error) => {
                     console.error("Chyba při ukládání skóre: ", error);
@@ -337,7 +339,7 @@
             }
         }
 
-        // --- ZBÝVAJÍCÍ KÓD HRY ---
+        // --- HERNÍ LOGIKA ---
 
         const allAudio = document.querySelectorAll('audio');
         const muteButton = document.getElementById('mute-button');
@@ -381,7 +383,7 @@
         }
         
         function playCountdown(game, callback) {
-            const overlay = game.canvas.nextElementSibling.nextElementSibling; // Přizpůsobeno kvůli divu žebříčku
+            const overlay = game.canvas.nextElementSibling;
             let count = 2;
             readyFightSound.currentTime = 0;
             readyFightSound.play();
@@ -397,7 +399,7 @@
             }, 1000);
         }
 
-        // ... ZDE POKRAČUJE VEŠKERÝ KÓD PRO JEDNOTLIVÉ HRY (SNAKE, PONG, atd.) ...
+        // --- DEFINICE JEDNOTLIVÝCH HER ---
         // --- SNAKE ---
         gameInstances.snake = {
             canvas: document.getElementById('snake-canvas'), music: document.getElementById('snake-music'), ctx: null, tileSize: 20, snake: [], food: {}, direction: 'right', newDirection: 'right', score: 0, gameOver: false, paused: false, loop: null, lastUpdateTime: 0, updateInterval: 120,
@@ -626,7 +628,7 @@
             togglePause() { this.paused = !this.paused; document.body.style.overflow = this.paused ? 'auto' : 'hidden'; if (this.gameOver) { this.reset(); this.start(); return; } if (this.paused) this.music.pause(); else if (!this.gameOver) this.music.play(); }
         };
 
-        // --- HLAVNÍ EVENT LISTENERY ---
+        // --- HLAVNÍ EVENT LISTENER PO NAČTENÍ STRÁNKY ---
         document.addEventListener('DOMContentLoaded', () => {
             // Inicializace her
             const gameWindows = document.querySelectorAll('.game-window');
