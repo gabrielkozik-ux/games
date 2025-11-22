@@ -1,0 +1,206 @@
+body {
+    font-family: 'Inter', sans-serif;
+    transition: overflow 0.3s ease;
+    overflow-x: hidden; /* Zabraňuje horizontálnímu scrollování */
+}
+/* Fonty */
+.font-press-start { font-family: 'Press Start 2P', cursive; }
+.font-vt323 { font-family: 'VT323', monospace; }
+.font-silkscreen { font-family: 'Silkscreen', cursive; }
+.font-bungee { font-family: 'Bungee', cursive; }
+
+/* Herní okno - základní stav */
+.game-window {
+    aspect-ratio: 4 / 3;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    border: 4px solid #1f2937;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2), 0 4px 6px -2px rgba(0,0,0,0.1);
+    position: relative;
+    background: none;
+    padding: 0;
+    text-align: inherit;
+    overflow: hidden; /* Důležité pro clean look */
+}
+.game-window:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3), 0 10px 10px -5px rgba(0,0,0,0.2);
+}
+
+/* Aktivní herní okno (Fullscreen overlay efekt) */
+.game-window.active {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 50;
+    border: none;
+    border-radius: 0;
+    aspect-ratio: auto;
+    transform: none;
+    background-color: #111827; /* Tmavé pozadí v režimu celé obrazovky */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    cursor: default;
+}
+
+/* Elementy uvnitř okna */
+.game-window h2 { transition: opacity 0.3s ease; }
+.game-window canvas { 
+    display: none; 
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    max-width: 100%;
+    max-height: 80vh; /* Aby se vešlo ovládání */
+}
+
+/* Stavy při aktivní hře */
+.game-window.active h2 { display: none; }
+.game-window.active .leaderboard { display: none; }
+.game-window.active canvas { display: block; }
+.game-window.active .controls-hint { display: flex; }
+.game-window.active .close-btn { display: flex; }
+
+/* Leaderboard */
+.leaderboard { display: none; width: 100%; padding: 0 1rem; }
+.leaderboard h3 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+.leaderboard-list li {
+    font-size: 1rem; padding: 4px 8px;
+    display: flex; justify-content: space-between;
+    border-radius: 4px; margin-bottom: 2px;
+    background-color: rgba(255,255,255,0.1);
+    backdrop-filter: blur(2px);
+}
+.leaderboard-list li:nth-child(odd) { background-color: rgba(255,255,255,0.05); }
+
+/* Odpočet */
+.countdown-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 8rem; color: white; 
+    text-shadow: 4px 4px 0 #000;
+    z-index: 60; pointer-events: none; opacity: 0; transition: opacity 0.2s ease-in-out;
+}
+
+/* Barvy pozadí her */
+#snake-window { background-color: #a3e635; }
+#pong-window { background-color: #60a5fa; }
+#breakout-window { background-color: #facc15; }
+#dino-window { background-color: #d1d5db; }
+#invaders-window { background-color: #4c1d95; }
+#tetris-window { background-color: #fca5a5; }
+
+/* Utility */
+.noselect {
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+}
+
+/* Dotykové ovládání */
+#touch-controls {
+    display: none; /* Defaultně skryté */
+    position: fixed; bottom: 20px; left: 0; width: 100%;
+    padding: 0 20px; box-sizing: border-box; z-index: 100;
+    justify-content: space-between; align-items: flex-end;
+    pointer-events: none; /* Aby neblokovalo klikání skrz prázdná místa */
+}
+.game-window.active ~ #touch-controls {
+    /* Zobrazí se jen na mobilech přes media query níže */
+}
+
+#touch-controls button {
+    pointer-events: auto;
+    width: 60px; height: 60px; font-size: 24px;
+    border: 3px solid #1f2937; background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 50%; color: #1f2937; font-family: 'Press Start 2P', cursive;
+    backdrop-filter: blur(4px);
+    active: scale(0.9);
+    transition: transform 0.1s;
+    box-shadow: 0 4px 0 #000;
+}
+#touch-controls button:active { transform: translateY(4px); box-shadow: 0 0 0 #000; }
+
+#d-pad { display: grid; grid-template-columns: repeat(3, 60px); grid-template-rows: repeat(2, 60px); grid-gap: 10px; }
+#btn-left { grid-column: 1; grid-row: 2; }
+#btn-up { grid-column: 2; grid-row: 1; }
+#btn-down { grid-column: 2; grid-row: 2; }
+#btn-right { grid-column: 3; grid-row: 2; }
+#btn-action { width: 80px; height: 80px; font-size: 30px; border-radius: 50%; background-color: #ef4444; color: white; border-color: #991b1b; }
+
+/* Mute tlačítko */
+#mute-button {
+    position: fixed; top: 20px; right: 20px; z-index: 200;
+    background: rgba(0,0,0,0.6); color: white;
+    border: 2px solid white; border-radius: 50%;
+    width: 44px; height: 44px; font-size: 20px;
+    cursor: pointer; display: flex; justify-content: center; align-items: center;
+    transition: all 0.2s;
+}
+#mute-button:hover { background: rgba(0,0,0,0.8); transform: scale(1.1); }
+
+/* Tlačítko ZAVŘÍT */
+.close-btn {
+    display: none; /* Viditelné jen v active režimu */
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: #ef4444;
+    color: white;
+    font-family: 'Bungee', cursive;
+    font-size: 1.2rem;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 2px solid white;
+    cursor: pointer;
+    z-index: 101;
+    box-shadow: 0 4px 0 #991b1b;
+    transition: all 0.1s;
+    text-transform: uppercase;
+    align-items: center;
+    gap: 8px;
+}
+.close-btn:active { transform: translateY(4px); box-shadow: none; }
+
+/* Nápověda ovládání */
+.controls-hint {
+    display: none;
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.7);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-family: 'VT323', monospace;
+    font-size: 1.2rem;
+    gap: 10px;
+    align-items: center;
+    pointer-events: none;
+    white-space: nowrap;
+}
+.key-icon {
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 4px;
+    padding: 2px 6px;
+    background: rgba(255,255,255,0.1);
+    font-family: sans-serif;
+    font-size: 0.9rem;
+}
+
+/* Responsivita */
+@media (max-width: 768px) {
+    #touch-controls { display: flex; }
+    .controls-hint { display: none !important; }
+    .game-window.active { justify-content: flex-start; padding-top: 60px; }
+    .game-window.active canvas { max-height: 55vh; }
+    .close-btn { top: 10px; left: 10px; padding: 6px 12px; font-size: 1rem; }
+    #mute-button { top: 10px; right: 10px; }
+    h1 { font-size: 2rem; }
+}
