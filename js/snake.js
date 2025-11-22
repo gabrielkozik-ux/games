@@ -21,14 +21,10 @@ window.gameInstances.snake = {
         window.addEventListener('keydown', this.handleInput.bind(this)); 
     },
     reset() { 
-        // FIX: Přepočet výšky plátna tak, aby seděla do mřížky (Grid Snap)
-        // Zajistí, že canvas nebude končit v polovině řádku
+        // FIX: Přepočet výšky plátna tak, aby seděla do mřížky
         const cols = Math.floor(this.canvas.width / this.tileSize);
         const rows = Math.floor(this.canvas.height / this.tileSize);
         
-        // Nastavíme "logickou" výšku a šířku přesně na násobky
-        // Toto efektivně ořízne přebytečné pixely, které by dělaly "uříznutý" dojem
-        // Vizuálně to nevadí, protože pozadí je tmavé
         this.canvas.height = rows * this.tileSize; 
         this.canvas.width = cols * this.tileSize;
 
@@ -47,7 +43,16 @@ window.gameInstances.snake = {
         }
     },
     handleInput(e) { 
-        if (window.activeGame !== 'snake' || this.paused) return; 
+        if (window.activeGame !== 'snake') return; 
+        
+        // FIX: Přidán mezerník pro pauzu
+        if (e.code === 'Space') {
+            this.togglePause();
+            return;
+        }
+
+        if (this.paused) return;
+
         if (e.key === 'ArrowUp' && this.lastProcessedDirection !== 'down') this.newDirection = 'up'; 
         else if (e.key === 'ArrowDown' && this.lastProcessedDirection !== 'up') this.newDirection = 'down'; 
         else if (e.key === 'ArrowLeft' && this.lastProcessedDirection !== 'right') this.newDirection = 'left'; 
@@ -88,6 +93,15 @@ window.gameInstances.snake = {
         this.ctx.fillStyle = 'white'; this.ctx.font = `16px "Press Start 2P"`; 
         this.ctx.fillText(`Score: ${this.score}`, 10, 30); 
         
+        if (this.paused && !this.gameOver) {
+            this.ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            this.ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
+            this.ctx.fillStyle = 'white'; this.ctx.textAlign = 'center';
+            this.ctx.font = '20px "Press Start 2P"';
+            this.ctx.fillText('PAUSE', this.canvas.width/2, this.canvas.height/2);
+            this.ctx.textAlign = 'start';
+        }
+
         if (this.gameOver) this.drawGameOver();
     },
     drawGameOver() {
@@ -100,5 +114,5 @@ window.gameInstances.snake = {
     gameLoop(time) { if (!this.paused) { if (time - this.lastUpdateTime > this.updateInterval) { this.update(); this.lastUpdateTime = time; } this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
     start() { this.paused = false; this.lastUpdateTime = 0; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); window.safePlay(this.music); },
     stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause(); document.body.style.overflow = 'auto'; },
-    togglePause() { this.paused = !this.paused; if (this.gameOver) { /* Nic */ } else if (this.paused) this.music.pause(); else this.music.play(); }
+    togglePause() { this.paused = !this.paused; if (this.gameOver) { /* Nic */ } else if (this.paused) this.music.pause(); else this.music.play(); this.draw(); }
 };
