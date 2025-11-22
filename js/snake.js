@@ -21,9 +21,21 @@ window.gameInstances.snake = {
         window.addEventListener('keydown', this.handleInput.bind(this)); 
     },
     reset() { 
+        // FIX: Přepočet výšky plátna tak, aby seděla do mřížky (Grid Snap)
+        // Zajistí, že canvas nebude končit v polovině řádku
+        const cols = Math.floor(this.canvas.width / this.tileSize);
+        const rows = Math.floor(this.canvas.height / this.tileSize);
+        
+        // Nastavíme "logickou" výšku a šířku přesně na násobky
+        // Toto efektivně ořízne přebytečné pixely, které by dělaly "uříznutý" dojem
+        // Vizuálně to nevadí, protože pozadí je tmavé
+        this.canvas.height = rows * this.tileSize; 
+        this.canvas.width = cols * this.tileSize;
+
         this.snake = [{ x: 10, y: 10 }, {x:9, y:10}, {x:8, y:10}]; 
         this.direction = 'right'; this.newDirection = 'right'; this.lastProcessedDirection = 'right';
         this.score = 0; this.gameOver = false; 
+        
         if(this.canvas.width > 0) this.placeFood(); 
         this.music.currentTime = 0; 
     },

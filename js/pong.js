@@ -12,14 +12,31 @@ window.gameInstances.pong = {
     maxScore: 15, 
     gameOver: false, 
     gameWon: false,
+    
     init() { this.ctx = this.canvas.getContext('2d'); },
+    
     reset() { 
-        this.paddleWidth = this.canvas.width / 70; this.paddleHeight = this.canvas.height / 5; 
-        this.ball = { x: this.canvas.width / 2, y: this.canvas.height / 2, size: this.canvas.width / 80, dx: 5, dy: 5 }; 
-        this.player = { x: 10, y: this.canvas.height / 2 - this.paddleHeight / 2, width: this.paddleWidth, height: this.paddleHeight, score: 0, speed: 8 }; 
-        this.ai = { x: this.canvas.width - 10 - this.paddleWidth, y: this.canvas.height / 2 - this.paddleHeight / 2, width: this.paddleWidth, height: this.paddleHeight, score: 0, speed: 5 }; 
+        this.paddleWidth = this.canvas.width / 70; 
+        this.paddleHeight = this.canvas.height / 5; 
+        
+        // ZRYCHLENÍ: Zvýšeno z 5 na 7
+        const startSpeed = 7; 
+        
+        this.ball = { 
+            x: this.canvas.width / 2, 
+            y: this.canvas.height / 2, 
+            size: this.canvas.width / 80, 
+            dx: startSpeed, 
+            dy: startSpeed 
+        }; 
+        
+        // ZRYCHLENÍ: Hráč i AI jsou trochu rychlejší (8->10, 5->7)
+        this.player = { x: 10, y: this.canvas.height / 2 - this.paddleHeight / 2, width: this.paddleWidth, height: this.paddleHeight, score: 0, speed: 10 }; 
+        this.ai = { x: this.canvas.width - 10 - this.paddleWidth, y: this.canvas.height / 2 - this.paddleHeight / 2, width: this.paddleWidth, height: this.paddleHeight, score: 0, speed: 7 }; 
+        
         this.gameOver = false; this.gameWon = false; this.music.currentTime = 0; 
     },
+    
     update() {
         if (this.paused || this.gameOver || this.gameWon) return;
         if (this.ai.score >= this.maxScore) { this.gameOver = true; window.playGameOverSound(); return; }
@@ -38,7 +55,7 @@ window.gameInstances.pong = {
             this.ball.x + this.ball.size > paddle.x && 
             this.ball.y > paddle.y && 
             this.ball.y < paddle.y + paddle.height) {
-                this.ball.dx *= -1.05;
+                this.ball.dx *= -1.05; // Zrychlování po odrazu
                 if(paddle === this.player) this.ball.x = this.player.x + this.player.width + this.ball.size;
                 else this.ball.x = this.ai.x - this.ball.size;
         }
@@ -51,7 +68,15 @@ window.gameInstances.pong = {
         else if (aiCenter > this.ball.y + 35) this.ai.y -= this.ai.speed;
         this.ai.y = Math.max(0, Math.min(this.canvas.height - this.ai.height, this.ai.y));
     },
-    resetBall() { this.ball.x = this.canvas.width / 2; this.ball.y = this.canvas.height / 2; this.ball.dx = (Math.random() > 0.5 ? 1 : -1) * 5; this.ball.dy = (Math.random() > 0.5 ? 1 : -1) * 5; },
+    
+    resetBall() { 
+        this.ball.x = this.canvas.width / 2; 
+        this.ball.y = this.canvas.height / 2; 
+        // Reset na základní rychlost 7
+        this.ball.dx = (Math.random() > 0.5 ? 1 : -1) * 7; 
+        this.ball.dy = (Math.random() > 0.5 ? 1 : -1) * 7; 
+    },
+    
     draw() {
         this.ctx.fillStyle = '#0f172a'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.strokeStyle = 'rgba(255,255,255,0.1)'; this.ctx.setLineDash([10, 10]); this.ctx.beginPath(); this.ctx.moveTo(this.canvas.width / 2, 0); this.ctx.lineTo(this.canvas.width / 2, this.canvas.height); this.ctx.stroke(); this.ctx.setLineDash([]);

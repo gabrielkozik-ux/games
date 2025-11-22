@@ -1,5 +1,4 @@
 // --- GLOBÁLNÍ PROMĚNNÉ ---
-// Definujeme je zde, aby byly dostupné pro ostatní skripty
 window.gameInstances = {};
 window.activeGame = null;
 window.keysPressed = {};
@@ -21,20 +20,26 @@ firebase.initializeApp(firebaseConfig);
 window.auth = firebase.auth();
 window.db = firebase.firestore();
 
-// --- UTILITY FUNCTIONS (Pomocné funkce) ---
+// --- UTILITY FUNCTIONS ---
 
-// Bezpečné přehrávání zvuku
+// POMOCNÁ FUNKCE: Výpočet bezpečné výšky pro hru
+// Toto řeší problém "uříznuté spodní části"
+window.getPlayableHeight = function() {
+    // Na mobilu odečteme více místa pro UI prohlížeče a ovládací prvky
+    const safeZone = window.innerWidth < 768 ? 140 : 0;
+    // Maximální výška by měla korespondovat s CSS (max-height: 80vh u desktopu, ale flexibilní u mobilu)
+    // Bereme 100% výšky okna mínus safeZone, ale maximálně 85% výšky (aby zbylo místo nahoře/dole)
+    return Math.min(window.innerHeight - safeZone, window.innerHeight * 0.85);
+};
+
 window.safePlay = function(audioElement) {
     if (!audioElement) return;
     const playPromise = audioElement.play();
     if (playPromise !== undefined) {
-        playPromise.catch(error => {
-            console.log("Autoplay blocked or error:", error);
-        });
+        playPromise.catch(error => console.log("Autoplay blocked:", error));
     }
 };
 
-// Zvukové efekty
 const gameOverSound = document.getElementById('game-over-sound');
 const readyFightSound = document.getElementById('ready-fight-sound');
 const victorySound = document.getElementById('victory-sound');
@@ -91,7 +96,7 @@ window.playCountdown = function(game, callback) {
     }, 600);
 };
 
-// --- FIREBASE LOGIKA (Skóre a Leaderboard) ---
+// --- FIREBASE LOGIKA ---
 window.escapeHtml = function(text) {
     if (!text) return 'Anonym';
     return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
@@ -123,18 +128,13 @@ window.displayLeaderboard = async function(gameName) {
         querySnapshot.forEach(doc => {
             const data = doc.data();
             const listItem = document.createElement('li');
-
             let deleteButtonHTML = '';
             if (currentUser && data.userId === currentUser.uid) {
                 deleteButtonHTML = `<button data-id="${doc.id}" class="delete-score-btn text-red-500 font-bold ml-2 hover:text-red-700" title="Smazat">×</button>`;
             }
-
             let rankIcon = `${rank}.`;
-            if (rank === 1) {
-                rankIcon = '🥇';
-                listItem.style.fontWeight = 'bold';
-                listItem.style.color = '#fbbf24'; 
-            } else if (rank === 2) rankIcon = '🥈';
+            if (rank === 1) { rankIcon = '🥇'; listItem.style.fontWeight = 'bold'; listItem.style.color = '#fbbf24'; } 
+            else if (rank === 2) rankIcon = '🥈';
             else if (rank === 3) rankIcon = '🥉';
 
             listItem.innerHTML = `<span class="truncate mr-2">${rankIcon} ${window.escapeHtml(data.userName)}</span> <span class="whitespace-nowrap">${data.score}${deleteButtonHTML}</span>`;
@@ -142,8 +142,8 @@ window.displayLeaderboard = async function(gameName) {
             rank++;
         });
     } catch (error) {
-        console.error(`Chyba při načítání žebříčku pro ${gameName}:`, error);
-        listElement.innerHTML = '<li>Chyba načítání dat.</li>';
+        console.error(`Chyba:`, error);
+        listElement.innerHTML = '<li>Chyba načítání.</li>';
     }
 };
 
@@ -152,17 +152,10 @@ window.saveCurrentScore = function() {
     if (user && window.activeGame) {
         const gameName = window.activeGame;
         let scoreToSave = 0;
+        if (gameName === 'pong') scoreToSave = window.gameInstances[gameName].player.score;
+        else scoreToSave = window.gameInstances[gameName].score;
 
-        if (gameName === 'pong') {
-            scoreToSave = window.gameInstances[gameName].player.score;
-        } else {
-            scoreToSave = window.gameInstances[gameName].score;
-        }
-
-        // Specialita pro Dino Run (dělení skóre)
-        if (gameName === 'dino' && scoreToSave > 0) {
-            scoreToSave = Math.floor(scoreToSave / 5);
-        }
+        if (gameName === 'dino' && scoreToSave > 0) scoreToSave = Math.floor(scoreToSave / 5);
 
         if (scoreToSave > 0) {
             window.db.collection("scores").add({
@@ -171,22 +164,16 @@ window.saveCurrentScore = function() {
                 game: gameName,
                 score: scoreToSave,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            })
-            .then(() => {
-                console.log("Skóre uloženo.");
-                window.displayLeaderboard(gameName);
-            })
-            .catch((error) => console.error("Chyba ukládání:", error));
+            }).then(() => window.displayLeaderboard(gameName));
         }
     }
 };
 
-// --- HLAVNÍ EVENT LISTENERS ---
+// --- EVENT LISTENERS ---
 document.addEventListener('DOMContentLoaded', () => {
     const allAudio = document.querySelectorAll('audio');
     const muteButton = document.getElementById('mute-button');
     
-    // Mute logika
     const savedMuteState = localStorage.getItem('isMuted');
     if (savedMuteState === 'true') { 
         window.isMuted = true; 
@@ -201,21 +188,14 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('isMuted', window.isMuted);
     });
 
-    // Klávesnice
     window.addEventListener('keydown', (e) => { 
-        if (window.activeGame && [' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-            e.preventDefault();
-        }
+        if (window.activeGame && [' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) e.preventDefault();
         window.keysPressed[e.key] = true; 
     });
     window.addEventListener('keyup', (e) => { window.keysPressed[e.key] = false; });
 
-    // Inicializace her
-    Object.values(window.gameInstances).forEach(game => {
-        if(game.init) game.init();
-    });
+    Object.values(window.gameInstances).forEach(game => { if(game.init) game.init(); });
 
-    // Kliknutí na herní okno (Spuštění hry)
     document.querySelectorAll('.game-window').forEach(win => {
         win.addEventListener('click', (e) => {
             if (e.target.closest('.delete-score-btn') || e.target.closest('.close-btn')) return;
@@ -237,15 +217,16 @@ document.addEventListener('DOMContentLoaded', () => {
             window.activeGame = gameName;
             win.classList.add('active');
             
+            // --- DŮLEŽITÉ: NASTAVENÍ VELIKOSTI ---
             game.canvas.width = window.innerWidth;
-            game.canvas.height = window.innerHeight;
+            game.canvas.height = window.getPlayableHeight();
+            
             game.reset();
             game.draw();
             
             window.playCountdown(game, () => game.start());
         });
         
-        // Tlačítko Zavřít
         const closeBtn = win.querySelector('.close-btn');
         if (closeBtn) {
             closeBtn.addEventListener('click', (e) => {
@@ -261,7 +242,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Mobilní ovládání
     function simulateKeyEvent(type, key) { window.dispatchEvent(new KeyboardEvent(type, { 'key': key, 'bubbles': true })); }
     const touchControls = { 'btn-left': 'ArrowLeft', 'btn-right': 'ArrowRight', 'btn-up': 'ArrowUp', 'btn-down': 'ArrowDown', 'btn-action': ' ' };
     for (const [btnId, key] of Object.entries(touchControls)) {
@@ -272,60 +252,50 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Firebase Auth UI
+    // Login / Logout handlers (zkráceno)
     const loginBtn = document.getElementById('login-btn');
     const logoutBtn = document.getElementById('logout-btn');
     const userInfo = document.getElementById('user-info');
     const userNameEl = document.getElementById('user-name');
-
-    if(loginBtn) {
-        loginBtn.addEventListener('click', () => {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            window.auth.signInWithPopup(provider).catch(e => console.error("Login error:", e));
-        });
-    }
+    if(loginBtn) loginBtn.addEventListener('click', () => window.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()));
     if(logoutBtn) logoutBtn.addEventListener('click', () => window.auth.signOut());
 
     window.auth.onAuthStateChanged(user => {
-        const leaderboards = document.querySelectorAll('.leaderboard');
         if (user) {
             if(loginBtn) loginBtn.classList.add('hidden');
             userInfo.classList.remove('hidden');
             userNameEl.textContent = user.displayName;
-            leaderboards.forEach(lb => lb.style.display = 'block');
+            document.querySelectorAll('.leaderboard').forEach(lb => lb.style.display = 'block');
             Object.keys(window.gameInstances).forEach(window.displayLeaderboard);
         } else {
             if(loginBtn) loginBtn.classList.remove('hidden');
             userInfo.classList.add('hidden');
-            leaderboards.forEach(lb => lb.style.display = 'none');
+            document.querySelectorAll('.leaderboard').forEach(lb => lb.style.display = 'none');
         }
     });
 
-    // Mazání skóre
+    // Mazání
     document.querySelector('main').addEventListener('click', async (e) => {
         if (e.target.classList.contains('delete-score-btn')) {
             e.stopPropagation();
-            const scoreId = e.target.dataset.id;
-            const gameName = e.target.closest('.game-window').dataset.game;
-            if (confirm("Opravdu chceš smazat tento záznam?")) {
+            if (confirm("Smazat?")) {
                 try {
-                    await window.db.collection('scores').doc(scoreId).delete();
-                    window.displayLeaderboard(gameName);
-                } catch (error) { console.error("Error:", error); alert("Chyba mazání."); }
+                    await window.db.collection('scores').doc(e.target.dataset.id).delete();
+                    window.displayLeaderboard(e.target.closest('.game-window').dataset.game);
+                } catch (error) { console.error(error); }
             }
         }
     });
     
-    // Resize handler
+    // Resize handler s opravou
     window.addEventListener('resize', () => {
         if (window.activeGame && window.gameInstances[window.activeGame]) {
             const game = window.gameInstances[window.activeGame];
             game.canvas.width = window.innerWidth;
-            game.canvas.height = window.innerHeight;
+            game.canvas.height = window.getPlayableHeight();
             game.draw();
         }
     });
 
-    // První načtení žebříčků
     setTimeout(() => Object.keys(window.gameInstances).forEach(window.displayLeaderboard), 1000);
 });
