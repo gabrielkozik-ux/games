@@ -23,13 +23,11 @@ window.db = firebase.firestore();
 // --- UTILITY FUNCTIONS ---
 
 // POMOCNÁ FUNKCE: Výpočet bezpečné výšky pro hru
-// Toto řeší problém "uříznuté spodní části"
 window.getPlayableHeight = function() {
-    // Na mobilu odečteme více místa pro UI prohlížeče a ovládací prvky
-    const safeZone = window.innerWidth < 768 ? 140 : 0;
-    // Maximální výška by měla korespondovat s CSS (max-height: 80vh u desktopu, ale flexibilní u mobilu)
-    // Bereme 100% výšky okna mínus safeZone, ale maximálně 85% výšky (aby zbylo místo nahoře/dole)
-    return Math.min(window.innerHeight - safeZone, window.innerHeight * 0.85);
+    // FIX: Agresivní "Safety Margin" pro notebooky
+    // Použijeme pouze 75% výšky okna. To zaručí, že i s taskbarem a lištami
+    // bude hra celá vidět a vycentrovaná.
+    return Math.floor(window.innerHeight * 0.75);
 };
 
 window.safePlay = function(audioElement) {
@@ -217,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
             window.activeGame = gameName;
             win.classList.add('active');
             
-            // --- DŮLEŽITÉ: NASTAVENÍ VELIKOSTI ---
+            // --- DŮLEŽITÉ: Výchozí velikost (Hry si ji mohou upravit v reset()) ---
             game.canvas.width = window.innerWidth;
             game.canvas.height = window.getPlayableHeight();
             
@@ -293,6 +291,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const game = window.gameInstances[window.activeGame];
             game.canvas.width = window.innerWidth;
             game.canvas.height = window.getPlayableHeight();
+            
+            // Pokud hra podporuje vlastní resize logiku (Tetris/Snake), zavoláme reset/update
+            if (window.activeGame === 'tetris' || window.activeGame === 'snake') {
+               game.reset();
+            }
             game.draw();
         }
     });

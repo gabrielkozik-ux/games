@@ -21,10 +21,14 @@ window.gameInstances.snake = {
         window.addEventListener('keydown', this.handleInput.bind(this)); 
     },
     reset() { 
-        // FIX: Přepočet výšky plátna tak, aby seděla do mřížky
-        const cols = Math.floor(this.canvas.width / this.tileSize);
+        // FIX: Resizing
+        // 1. Zjistíme, kolik řádků se vejde do bezpečné výšky (75% okna)
         const rows = Math.floor(this.canvas.height / this.tileSize);
+        // 2. Zjistíme, kolik sloupců se vejde do šířky okna (maximálně)
+        const cols = Math.floor(window.innerWidth / this.tileSize);
         
+        // 3. Nastavíme plátno PŘESNĚ na násobky. 
+        // Tím zamezíme "uříznutí" a díky CSS margin:auto se hra vycentruje.
         this.canvas.height = rows * this.tileSize; 
         this.canvas.width = cols * this.tileSize;
 
@@ -44,13 +48,7 @@ window.gameInstances.snake = {
     },
     handleInput(e) { 
         if (window.activeGame !== 'snake') return; 
-        
-        // FIX: Přidán mezerník pro pauzu
-        if (e.code === 'Space') {
-            this.togglePause();
-            return;
-        }
-
+        if (e.code === 'Space') { this.togglePause(); return; }
         if (this.paused) return;
 
         if (e.key === 'ArrowUp' && this.lastProcessedDirection !== 'down') this.newDirection = 'up'; 
@@ -61,17 +59,14 @@ window.gameInstances.snake = {
     update() { 
         if (this.gameOver) return; 
         this.direction = this.newDirection; 
-        
         const head = { ...this.snake[0] }; 
         if (this.direction === 'right') head.x++; 
         if (this.direction === 'left') head.x--; 
         if (this.direction === 'up') head.y--; 
         if (this.direction === 'down') head.y++; 
-        
         this.lastProcessedDirection = this.direction;
 
         const c = Math.floor(this.canvas.width / this.tileSize), r = Math.floor(this.canvas.height / this.tileSize); 
-        
         if (head.x < 0 || head.x >= c || head.y < 0 || head.y >= r) { this.gameOver = true; window.playGameOverSound(); return; } 
         for (let i = 0; i < this.snake.length; i++) { if (head.x === this.snake[i].x && head.y === this.snake[i].y) { this.gameOver = true; window.playGameOverSound(); return; } } 
         
@@ -94,14 +89,11 @@ window.gameInstances.snake = {
         this.ctx.fillText(`Score: ${this.score}`, 10, 30); 
         
         if (this.paused && !this.gameOver) {
-            this.ctx.fillStyle = 'rgba(0,0,0,0.5)';
-            this.ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
-            this.ctx.fillStyle = 'white'; this.ctx.textAlign = 'center';
-            this.ctx.font = '20px "Press Start 2P"';
+            this.ctx.fillStyle = 'rgba(0,0,0,0.5)'; this.ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
+            this.ctx.fillStyle = 'white'; this.ctx.textAlign = 'center'; this.ctx.font = '20px "Press Start 2P"';
             this.ctx.fillText('PAUSE', this.canvas.width/2, this.canvas.height/2);
             this.ctx.textAlign = 'start';
         }
-
         if (this.gameOver) this.drawGameOver();
     },
     drawGameOver() {
