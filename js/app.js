@@ -24,10 +24,15 @@ window.db = firebase.firestore();
 
 // POMOCNÁ FUNKCE: Výpočet bezpečné výšky pro hru
 window.getPlayableHeight = function() {
-    // FIX: Agresivní "Safety Margin" pro notebooky
-    // Použijeme pouze 75% výšky okna. To zaručí, že i s taskbarem a lištami
-    // bude hra celá vidět a vycentrovaná.
-    return Math.floor(window.innerHeight * 0.75);
+    // FIX: Ještě agresivnější ořez pro 13" notebooky
+    // 1. Varianta: 70% výšky (konzervativní)
+    const percentHeight = window.innerHeight * 0.70;
+    
+    // 2. Varianta: Výška minus pevné pixely pro lišty (cca 180px pro header, footer a OS lišty)
+    const pixelOffsetHeight = window.innerHeight - 180;
+    
+    // Vezmeme tu MENŠÍ hodnotu, abychom měli jistotu, že se to vejde
+    return Math.floor(Math.min(percentHeight, pixelOffsetHeight));
 };
 
 window.safePlay = function(audioElement) {
@@ -215,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
             window.activeGame = gameName;
             win.classList.add('active');
             
-            // --- DŮLEŽITÉ: Výchozí velikost (Hry si ji mohou upravit v reset()) ---
+            // --- DŮLEŽITÉ: Výchozí velikost ---
             game.canvas.width = window.innerWidth;
             game.canvas.height = window.getPlayableHeight();
             
@@ -250,7 +255,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Login / Logout handlers (zkráceno)
     const loginBtn = document.getElementById('login-btn');
     const logoutBtn = document.getElementById('logout-btn');
     const userInfo = document.getElementById('user-info');
@@ -272,7 +276,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Mazání
     document.querySelector('main').addEventListener('click', async (e) => {
         if (e.target.classList.contains('delete-score-btn')) {
             e.stopPropagation();
@@ -285,14 +288,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // Resize handler s opravou
     window.addEventListener('resize', () => {
         if (window.activeGame && window.gameInstances[window.activeGame]) {
             const game = window.gameInstances[window.activeGame];
             game.canvas.width = window.innerWidth;
             game.canvas.height = window.getPlayableHeight();
-            
-            // Pokud hra podporuje vlastní resize logiku (Tetris/Snake), zavoláme reset/update
             if (window.activeGame === 'tetris' || window.activeGame === 'snake') {
                game.reset();
             }

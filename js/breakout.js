@@ -2,11 +2,17 @@ window.gameInstances.breakout = {
     canvas: document.getElementById('breakout-canvas'), 
     music: document.getElementById('breakout-music'), 
     ctx: null, paddle: {}, balls: [], bricks: [], powerUps: [], score: 0, lives: 3, paused: false, gameOver: false, loop: null,
-    init() { this.ctx = this.canvas.getContext('2d'); },
+    
+    init() { 
+        this.ctx = this.canvas.getContext('2d'); 
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && window.activeGame === 'breakout') {
+                this.togglePause();
+            }
+        });
+    },
     
     reset() { 
-        // Breakout použije výchozí canvas nastavený v app.js (75% height)
-        // Jen se ujistíme, že pálka je v dolní části tohoto menšího plátna
         this.paddle = { x: this.canvas.width / 2 - 50, y: this.canvas.height - 20, width: 100, height: 10, speed: 10 }; 
         this.balls = [{ x: this.canvas.width / 2, y: this.canvas.height - 30, size: 7, dx: 4, dy: -4 }]; 
         this.powerUps = []; 
@@ -61,10 +67,19 @@ window.gameInstances.breakout = {
         this.ctx.fillStyle = 'white'; this.ctx.font = '20px "Bungee"'; this.ctx.textAlign = 'left'; this.ctx.fillText(`Score: ${this.score}`, 10, 30);
         this.ctx.textAlign = 'right'; this.ctx.fillText(`Lives: ${this.lives}`, this.canvas.width - 10, 30);
         
+        // PAUSE TEXT
+        if (this.paused && !this.gameOver) {
+            this.ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            this.ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
+            this.ctx.fillStyle = 'white'; this.ctx.textAlign = 'center';
+            this.ctx.fillText('PAUSED', this.canvas.width/2, this.canvas.height/2);
+            this.ctx.textAlign = 'start'; // Reset
+        }
+
         if (this.gameOver) { this.ctx.fillStyle = 'rgba(0,0,0,0.7)'; this.ctx.fillRect(0,0,this.canvas.width,this.canvas.height); this.ctx.fillStyle='white'; this.ctx.textAlign='center'; this.ctx.fillText('GAME OVER', this.canvas.width/2, this.canvas.height/2); }
     },
     gameLoop() { if (!this.paused) { this.update(); this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
     start() { this.paused = false; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); window.safePlay(this.music);},
     stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause(); document.body.style.overflow = 'auto';},
-    togglePause() { this.paused = !this.paused; if(!this.gameOver && !this.paused) this.music.play(); else this.music.pause(); }
+    togglePause() { this.paused = !this.paused; if(!this.gameOver && !this.paused) this.music.play(); else this.music.pause(); this.draw(); }
 };

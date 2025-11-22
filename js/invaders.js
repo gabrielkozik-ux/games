@@ -9,10 +9,26 @@ window.gameInstances.invaders = {
     },
     createInvaders() {
         this.invaders = []; const rows = 5; const cols = 10;
-        const invaderWidth = this.canvas.width / 25; const invaderHeight = invaderWidth * 0.8;
-        const invaderPadding = invaderWidth / 2; const totalRowWidth = cols * (invaderWidth + invaderPadding) - invaderPadding;
-        const startX = (this.canvas.width - totalRowWidth) / 2; const startY = 30;
-        for (let r = 0; r < rows; r++) { for (let c = 0; c < cols; c++) { this.invaders.push({ x: startX + c * (invaderWidth + invaderPadding), y: startY + r * (invaderHeight + invaderPadding), width: invaderWidth, height: invaderHeight }); } }
+        // ZMENA: Menší invaders (děleno 35) a větší mezery
+        const invaderWidth = this.canvas.width / 35; 
+        const invaderHeight = invaderWidth * 0.8;
+        // ZMENA: Větší padding (stejný jako šířka invadera)
+        const invaderPadding = invaderWidth; 
+        
+        const totalRowWidth = cols * (invaderWidth + invaderPadding) - invaderPadding;
+        const startX = (this.canvas.width - totalRowWidth) / 2; 
+        const startY = 30;
+        
+        for (let r = 0; r < rows; r++) { 
+            for (let c = 0; c < cols; c++) { 
+                this.invaders.push({ 
+                    x: startX + c * (invaderWidth + invaderPadding), 
+                    y: startY + r * (invaderHeight + invaderPadding), 
+                    width: invaderWidth, 
+                    height: invaderHeight 
+                }); 
+            } 
+        }
     },
     update() {
         if (this.paused || this.gameOver) return;

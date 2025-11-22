@@ -2,7 +2,8 @@ window.gameInstances.tetris = {
     canvas: document.getElementById('tetris-canvas'), 
     music: document.getElementById('tetris-music'), 
     ctx: null, grid: [], score: 0, gameOver: false, paused: false, loop: null, dropCounter: 0, dropInterval: 1000, lastTime: 0, 
-    cols: 10, rows: 20, blockSize: 0,
+    cols: 12, // ZMĚNA: Rozšířeno z 10 na 12
+    rows: 20, blockSize: 0,
     boardWidth: 0, 
     
     player: { pos: { x: 0, y: 0 }, matrix: null, score: 0 }, 
@@ -15,18 +16,15 @@ window.gameInstances.tetris = {
     reset() {
         if (this.canvas.height === 0) return;
         
-        // 1. Vypočítáme velikost bloku podle dostupné výšky (75% okna z app.js)
         this.rows = 20;
         this.blockSize = Math.floor(this.canvas.height / this.rows);
         
-        this.cols = 10;
+        // ZMĚNA: Sloupce fixně 12
+        this.cols = 12;
         this.boardWidth = this.cols * this.blockSize;
-        const sidebarWidth = 150; // Místo pro "Next Piece"
+        const sidebarWidth = 150;
 
-        // 2. CRITICAL FIX: Změníme šířku plátna, aby odpovídala přesně hře.
-        // Díky tomu bude fungovat CSS centrování (margin: auto / flexbox).
         this.canvas.width = this.boardWidth + sidebarWidth;
-        // Zarovnáme i výšku přesně na pixely
         this.canvas.height = this.rows * this.blockSize;
 
         this.grid = this.createMatrix(this.cols, this.rows);
@@ -100,13 +98,11 @@ window.gameInstances.tetris = {
         this.ctx.fillStyle = '#1e293b'; this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         if (!this.grid || !this.player.matrix) return;
         
-        // Herní plocha
         this.ctx.fillStyle = '#0f172a'; this.ctx.fillRect(0, 0, this.boardWidth, this.canvas.height);
         
         this.drawMatrix(this.grid, { x: 0, y: 0 });
         this.drawMatrix(this.player.matrix, this.player.pos);
         
-        // UI Sidebar
         const sidebarX = this.boardWidth + 20;
         this.ctx.fillStyle = 'white'; this.ctx.textAlign = 'left';
         this.ctx.font = '20px "Silkscreen"'; this.ctx.fillText(`SCORE`, sidebarX, 50);

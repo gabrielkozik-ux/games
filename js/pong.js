@@ -13,13 +13,20 @@ window.gameInstances.pong = {
     gameOver: false, 
     gameWon: false,
     
-    init() { this.ctx = this.canvas.getContext('2d'); },
+    // Přidán EventListener pro pauzu
+    init() { 
+        this.ctx = this.canvas.getContext('2d'); 
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && window.activeGame === 'pong') {
+                this.togglePause();
+            }
+        });
+    },
     
     reset() { 
         this.paddleWidth = this.canvas.width / 70; 
         this.paddleHeight = this.canvas.height / 5; 
         
-        // ZRYCHLENÍ: Zvýšeno z 5 na 7
         const startSpeed = 7; 
         
         this.ball = { 
@@ -30,7 +37,6 @@ window.gameInstances.pong = {
             dy: startSpeed 
         }; 
         
-        // ZRYCHLENÍ: Hráč i AI jsou trochu rychlejší (8->10, 5->7)
         this.player = { x: 10, y: this.canvas.height / 2 - this.paddleHeight / 2, width: this.paddleWidth, height: this.paddleHeight, score: 0, speed: 10 }; 
         this.ai = { x: this.canvas.width - 10 - this.paddleWidth, y: this.canvas.height / 2 - this.paddleHeight / 2, width: this.paddleWidth, height: this.paddleHeight, score: 0, speed: 7 }; 
         
@@ -55,7 +61,7 @@ window.gameInstances.pong = {
             this.ball.x + this.ball.size > paddle.x && 
             this.ball.y > paddle.y && 
             this.ball.y < paddle.y + paddle.height) {
-                this.ball.dx *= -1.05; // Zrychlování po odrazu
+                this.ball.dx *= -1.05; 
                 if(paddle === this.player) this.ball.x = this.player.x + this.player.width + this.ball.size;
                 else this.ball.x = this.ai.x - this.ball.size;
         }
@@ -72,7 +78,6 @@ window.gameInstances.pong = {
     resetBall() { 
         this.ball.x = this.canvas.width / 2; 
         this.ball.y = this.canvas.height / 2; 
-        // Reset na základní rychlost 7
         this.ball.dx = (Math.random() > 0.5 ? 1 : -1) * 7; 
         this.ball.dy = (Math.random() > 0.5 ? 1 : -1) * 7; 
     },
@@ -87,6 +92,15 @@ window.gameInstances.pong = {
         this.ctx.font = `40px "Silkscreen"`; this.ctx.textAlign = 'center'; 
         this.ctx.fillText(this.player.score, this.canvas.width / 4, 60); 
         this.ctx.fillText(this.ai.score, this.canvas.width * 3 / 4, 60);
+        
+        // PAUSE TEXT
+        if (this.paused && !this.gameOver && !this.gameWon) {
+            this.ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            this.ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
+            this.ctx.fillStyle = 'white'; 
+            this.ctx.fillText('PAUSED', this.canvas.width/2, this.canvas.height/2);
+        }
+
         if (this.gameOver || this.gameWon) {
             this.ctx.fillStyle = 'rgba(0,0,0,0.8)'; this.ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
             this.ctx.fillStyle = this.gameWon ? '#fde047' : 'white';
@@ -96,5 +110,5 @@ window.gameInstances.pong = {
     gameLoop() { if (!this.paused) { this.update(); this.draw(); } this.loop = requestAnimationFrame(this.gameLoop.bind(this)); },
     start() { this.paused = false; if(this.loop) cancelAnimationFrame(this.loop); this.loop = requestAnimationFrame(this.gameLoop.bind(this)); window.safePlay(this.music);},
     stop() { if(this.loop) cancelAnimationFrame(this.loop); this.loop = null; this.paused = true; this.music.pause(); document.body.style.overflow = 'auto';},
-    togglePause() { this.paused = !this.paused; if (!this.gameOver && !this.gameWon && !this.paused) this.music.play(); else this.music.pause(); }
+    togglePause() { this.paused = !this.paused; if (!this.gameOver && !this.gameWon && !this.paused) this.music.play(); else this.music.pause(); this.draw(); }
 };
