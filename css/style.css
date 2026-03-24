@@ -12,7 +12,7 @@ body {
 /* Herní okno */
 .game-window {
     aspect-ratio: 4 / 3;
-    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); /* Bounce effect na roztáhnutí */
     cursor: pointer;
     display: flex;
     justify-content: center;
@@ -25,6 +25,7 @@ body {
     padding: 0;
     text-align: inherit;
     overflow: hidden;
+    transform-origin: center;
 }
 .game-window:hover {
     transform: translateY(-5px) scale(1.02);
@@ -34,21 +35,22 @@ body {
 /* Aktivní herní okno */
 .game-window.active {
     position: fixed;
-    top: 0;
-    left: 0;
+    top: 50%;
+    left: 50%;
     width: 100vw;
     height: 100vh;
+    transform: translate(-50%, -50%); /* Startovaci pozice před roztáhnutím + vycentrování po roztáhnutí */
     z-index: 50;
     border: none;
     border-radius: 0;
     aspect-ratio: auto;
-    transform: none;
     background-color: #111827;
     display: flex;
     flex-direction: column;
     justify-content: center; /* Vertikální centrování canvasu */
     align-items: center;     /* Horizontální centrování canvasu */
     cursor: default;
+    box-shadow: none;
 }
 
 .game-window h2 { transition: opacity 0.3s ease; }
@@ -57,6 +59,20 @@ body {
     box-shadow: 0 0 20px rgba(0,0,0,0.5);
     max-width: 100%;
     /* Canvas se nesmí roztahovat víc, než dovolí JS, jinak se deformuje */
+}
+
+/* How to play Modal */
+.how-to-play-modal {
+    display: none;
+}
+.how-to-play-modal.active-modal {
+    display: flex;
+    animation: modalPopIn 0.3s ease-out forwards;
+}
+
+@keyframes modalPopIn {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
 }
 
 .game-window.active h2 { display: none; }
@@ -156,16 +172,7 @@ body {
 }
 .close-btn:active { transform: translateY(4px); box-shadow: none; }
 
-/* Mute Button */
-#mute-button {
-    position: fixed; top: 20px; right: 20px; z-index: 200;
-    background: rgba(0,0,0,0.6); color: white;
-    border: 2px solid white; border-radius: 50%;
-    width: 44px; height: 44px; font-size: 20px;
-    cursor: pointer; display: flex; justify-content: center; align-items: center;
-    transition: all 0.2s;
-}
-#mute-button:hover { background: rgba(0,0,0,0.8); transform: scale(1.1); }
+/* Mute a CRT button specifikace (nyní primárně přes Tailwind v index.html) */
 
 /* Touch Controls */
 #touch-controls {
@@ -181,7 +188,6 @@ body {
     border: 3px solid #1f2937; background-color: rgba(255, 255, 255, 0.8);
     border-radius: 50%; color: #1f2937; font-family: 'Press Start 2P', cursive;
     backdrop-filter: blur(4px);
-    active: scale(0.9);
     transition: transform 0.1s;
     box-shadow: 0 4px 0 #000;
 }
@@ -194,10 +200,49 @@ body {
 #btn-action { width: 80px; height: 80px; font-size: 30px; border-radius: 50%; background-color: #ef4444; color: white; border-color: #991b1b; }
 
 @media (max-width: 768px) {
-    #touch-controls { display: flex; }
     .controls-hint { display: none !important; }
     .game-window.active { justify-content: flex-start; padding-top: 60px; }
     .game-window.active canvas { max-height: 55vh; }
     .close-btn { top: 10px; left: 10px; padding: 6px 12px; font-size: 1rem; }
-    #mute-button { top: 10px; right: 10px; }
+}
+
+/* Touch podpora pro zobrazení ovládání jen tam, kde je opravdu dotyk - body class="has-touch" nastavíme v JS */
+body.has-touch #touch-controls { display: flex; }
+
+/* --- CRT EFEKT --- */
+#crt-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1000;
+    pointer-events: none;
+    display: none; /* Přepínáno JS */
+}
+
+#crt-overlay.crt-on {
+    display: block;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background-size: 100% 2px, 3px 100%;
+}
+
+@keyframes flicker {
+    0% { opacity: 0.95; }
+    5% { opacity: 0.85; }
+    10% { opacity: 0.95; }
+    50% { opacity: 1; }
+    55% { opacity: 0.9; }
+    60% { opacity: 1; }
+    100% { opacity: 1; }
+}
+
+body.crt-active {
+    animation: flicker 0.15s infinite;
+}
+body.crt-active .game-window {
+    box-shadow: 0 0 15px rgba(255,255,255,0.1), inset 0 0 15px rgba(0,0,0,0.5);
+}
+body.crt-active .game-window.active canvas {
+    box-shadow: 0 0 30px rgba(100, 200, 255, 0.2);
 }
