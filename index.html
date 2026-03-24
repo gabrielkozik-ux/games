@@ -17,14 +17,22 @@
     <!-- Vlastní styly -->
     <link rel="stylesheet" href="css/style.css">
     
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
 </head>
 <body class="bg-gray-900 text-white p-4 sm:p-8 flex flex-col min-h-screen noselect">
+    <!-- CRT Overlay -->
+    <div id="crt-overlay" class="pointer-events-none hidden"></div>
 
-    <button id="mute-button" title="Vypnout/Zapnout zvuk">🔊</button>
+    <div class="fixed top-5 right-5 z-[200] flex gap-2">
+        <button id="crt-button" title="Vypnout/Zapnout CRT Efekt" class="w-11 h-11 rounded-full border-2 border-white bg-black/60 text-white flex justify-center items-center text-xl transition-transform hover:scale-110">📺</button>
+        <button id="mute-button" title="Vypnout/Zapnout zvuk" class="w-11 h-11 rounded-full border-2 border-white bg-black/60 text-white flex justify-center items-center text-xl transition-transform hover:scale-110">🔊</button>
+    </div>
 
     <header class="text-center mb-6 sm:mb-10">
         <h1 class="text-4xl md:text-6xl font-bungee tracking-wider text-yellow-400 drop-shadow-md">Retro Herní Arkáda</h1>
@@ -52,6 +60,18 @@
                 <h3 class="text-xl font-vt323 text-gray-800 font-bold">🏆 TOP 5 HRÁČŮ</h3>
                 <ol class="leaderboard-list text-gray-900 font-vt323"></ol>
             </div>
+            
+            <!-- How To Play Modal -->
+            <div class="how-to-play-modal hidden absolute inset-0 bg-black/90 flex-col items-center justify-center text-center p-6 z-[80] mx-4 my-8 rounded-xl border border-white/20">
+                <h3 class="text-3xl text-[#bef264] font-press-start mb-6">JAK HRÁT</h3>
+                <p class="font-vt323 text-2xl mb-4 max-w-md">Sbírej červená jablka a sleduj, jak tvůj had roste. Nenaraz do stěn ani sám do sebe!</p>
+                <div class="flex gap-4 mb-8">
+                    <div class="bg-white/10 p-3 rounded text-center"><span class="block text-2xl mb-1">⬆⬇⬅➡</span><span class="font-vt323 text-lg">Pohyb</span></div>
+                    <div class="bg-white/10 p-3 rounded text-center"><span class="block text-2xl font-sans font-bold mb-1">SPACE</span><span class="font-vt323 text-lg">Pauza</span></div>
+                </div>
+                <button class="start-game-btn bg-[#bef264] hover:bg-[#a3e635] text-black font-press-start text-xl py-4 px-8 rounded shadow-[0_4px_0_#4d7c0f] active:transform active:translate-y-1 active:shadow-none transition-all">START</button>
+            </div>
+
             <canvas id="snake-canvas"></canvas>
             <div class="countdown-overlay font-press-start"></div>
             <div class="controls-hint">
@@ -67,6 +87,18 @@
                 <h3 class="text-xl font-vt323 text-gray-800 font-bold">🏆 TOP 5 HRÁČŮ</h3>
                 <ol class="leaderboard-list text-gray-900 font-vt323"></ol>
             </div>
+
+            <!-- How To Play Modal -->
+            <div class="how-to-play-modal hidden absolute inset-0 bg-black/90 flex-col items-center justify-center text-center p-6 z-[80] mx-4 my-8 rounded-xl border border-white/20">
+                <h3 class="text-4xl text-[#60a5fa] font-silkscreen mb-6">JAK HRÁT</h3>
+                <p class="font-vt323 text-2xl mb-4 max-w-md">Odraž míček za soupeřovu pálku. První, kdo získá 10 bodů, vyhrává!</p>
+                <div class="flex gap-4 mb-8">
+                    <div class="bg-white/10 p-3 rounded text-center"><span class="block text-2xl mb-1">⬆⬇</span><span class="font-vt323 text-lg">Pohyb pálky</span></div>
+                    <div class="bg-white/10 p-3 rounded text-center"><span class="block text-2xl font-sans font-bold mb-1">SPACE</span><span class="font-vt323 text-lg">Pauza</span></div>
+                </div>
+                <button class="start-game-btn bg-[#60a5fa] hover:bg-[#3b82f6] text-white font-silkscreen text-2xl py-4 px-8 rounded shadow-[0_4px_0_#1e3a8a] active:transform active:translate-y-1 active:shadow-none transition-all">START</button>
+            </div>
+
             <canvas id="pong-canvas"></canvas>
             <div class="countdown-overlay font-silkscreen"></div>
             <div class="controls-hint">
@@ -82,6 +114,18 @@
                 <h3 class="text-xl font-vt323 text-gray-800 font-bold">🏆 TOP 5 HRÁČŮ</h3>
                 <ol class="leaderboard-list text-gray-900 font-vt323"></ol>
             </div>
+
+            <!-- How To Play Modal -->
+            <div class="how-to-play-modal hidden absolute inset-0 bg-black/90 flex-col items-center justify-center text-center p-6 z-[80] mx-4 my-8 rounded-xl border border-white/20">
+                <h3 class="text-4xl text-[#facc15] font-bungee mb-6">JAK HRÁT</h3>
+                <p class="font-vt323 text-2xl mb-4 max-w-md">Pomocí pálky odrážej míček a znič všechny barevné cihly v horní části obrazovky.</p>
+                <div class="flex gap-4 mb-8">
+                    <div class="bg-white/10 p-3 rounded text-center"><span class="block text-2xl mb-1">⬅➡</span><span class="font-vt323 text-lg">Pohyb pálky</span></div>
+                    <div class="bg-white/10 p-3 rounded text-center"><span class="block text-2xl font-sans font-bold mb-1">SPACE</span><span class="font-vt323 text-lg">Pauza</span></div>
+                </div>
+                <button class="start-game-btn bg-[#facc15] hover:bg-[#eab308] text-gray-900 font-bungee text-xl py-4 px-8 rounded shadow-[0_4px_0_#a16207] active:transform active:translate-y-1 active:shadow-none transition-all">START</button>
+            </div>
+
             <canvas id="breakout-canvas"></canvas>
             <div class="countdown-overlay font-bungee"></div>
             <div class="controls-hint">
@@ -97,6 +141,19 @@
                 <h3 class="text-xl font-vt323 text-gray-800 font-bold">🏆 TOP 5 HRÁČŮ</h3>
                 <ol class="leaderboard-list text-gray-900 font-vt323"></ol>
             </div>
+
+            <!-- How To Play Modal -->
+            <div class="how-to-play-modal hidden absolute inset-0 bg-black/90 flex-col items-center justify-center text-center p-6 z-[80] mx-4 my-8 rounded-xl border border-white/20">
+                <h3 class="text-5xl text-gray-300 font-vt323 mb-6">JAK HRÁT</h3>
+                <p class="font-vt323 text-2xl mb-4 max-w-md">Utíkej před vyhynutím! Skákej přes kaktusy a vyhýbej se letícím ptákům. Rychlost se zvyšuje!</p>
+                <div class="flex gap-4 mb-8">
+                    <div class="bg-white/10 p-3 rounded text-center"><span class="block text-2xl mb-1">⬆</span><span class="font-vt323 text-lg">Skrz kaktus</span></div>
+                    <div class="bg-white/10 p-3 rounded text-center"><span class="block text-2xl mb-1">⬇</span><span class="font-vt323 text-lg">Podletět ptačici</span></div>
+                    <div class="bg-white/10 p-3 rounded text-center"><span class="block text-2xl font-sans font-bold mb-1">SPACE</span><span class="font-vt323 text-lg">Zkus taky skok</span></div>
+                </div>
+                <button class="start-game-btn bg-white hover:bg-gray-200 text-black font-vt323 text-3xl py-3 px-8 rounded shadow-[0_4px_0_#4b5563] active:transform active:translate-y-1 active:shadow-none transition-all">START</button>
+            </div>
+
             <canvas id="dino-canvas"></canvas>
             <div class="countdown-overlay font-vt323"></div>
             <div class="controls-hint">
@@ -112,6 +169,18 @@
                 <h3 class="text-xl font-vt323 text-white font-bold">🏆 TOP 5 HRÁČŮ</h3>
                 <ol class="leaderboard-list text-white font-vt323"></ol>
             </div>
+
+            <!-- How To Play Modal -->
+            <div class="how-to-play-modal hidden absolute inset-0 bg-black/90 flex-col items-center justify-center text-center p-6 z-[80] mx-4 my-8 rounded-xl border border-white/20">
+                <h3 class="text-3xl text-purple-400 font-press-start mb-6">JAK HRÁT</h3>
+                <p class="font-vt323 text-2xl text-white mb-4 max-w-md">Ochraň Zemi před invazí! Znič všechny mimozemské lodě dříve, než přistanou.</p>
+                <div class="flex gap-4 mb-8 text-white">
+                    <div class="bg-white/10 p-3 rounded text-center"><span class="block text-2xl mb-1">⬅➡</span><span class="font-vt323 text-lg">Pohyb lodi</span></div>
+                    <div class="bg-white/10 p-3 rounded text-center"><span class="block text-2xl font-sans font-bold mb-1">SPACE</span><span class="font-vt323 text-lg">Střelba/Pauza</span></div>
+                </div>
+                <button class="start-game-btn bg-purple-600 hover:bg-purple-500 text-white font-press-start text-xl py-4 px-8 rounded shadow-[0_4px_0_#4c1d95] active:transform active:translate-y-1 active:shadow-none transition-all">START</button>
+            </div>
+
             <canvas id="invaders-canvas"></canvas>
             <div class="countdown-overlay font-press-start"></div>
             <div class="controls-hint">
@@ -127,6 +196,20 @@
                 <h3 class="text-xl font-vt323 text-gray-800 font-bold">🏆 TOP 5 HRÁČŮ</h3>
                 <ol class="leaderboard-list text-gray-900 font-vt323"></ol>
             </div>
+
+            <!-- How To Play Modal -->
+            <div class="how-to-play-modal hidden absolute inset-0 bg-black/90 flex-col items-center justify-center text-center p-6 z-[80] mx-4 my-8 rounded-xl border border-white/20">
+                <h3 class="text-4xl text-[#fca5a5] font-silkscreen mb-6">JAK HRÁT</h3>
+                <p class="font-vt323 text-2xl mb-4 max-w-md">Skládej padající tetromino bloky do plných řad, aby zmizely. Hra končí, pokud se hrací pole zaplní až po okraj!</p>
+                <div class="flex gap-4 mb-8 flex-wrap justify-center">
+                    <div class="bg-white/10 p-3 rounded text-center"><span class="block text-2xl mb-1">⬅➡</span><span class="font-vt323 text-lg">Pohyb bloku</span></div>
+                    <div class="bg-white/10 p-3 rounded text-center"><span class="block text-2xl mb-1">⬆</span><span class="font-vt323 text-lg">Rotace bloku</span></div>
+                    <div class="bg-white/10 p-3 rounded text-center"><span class="block text-2xl mb-1">⬇</span><span class="font-vt323 text-lg">Zrychlení pádu</span></div>
+                    <div class="bg-white/10 p-3 rounded text-center"><span class="block text-2xl font-sans font-bold mb-1">SPACE</span><span class="font-vt323 text-lg">Pauza</span></div>
+                </div>
+                <button class="start-game-btn bg-[#fca5a5] hover:bg-[#f87171] text-gray-900 font-silkscreen text-2xl py-4 px-8 rounded shadow-[0_4px_0_#b91c1c] active:transform active:translate-y-1 active:shadow-none transition-all">START</button>
+            </div>
+
             <canvas id="tetris-canvas"></canvas>
             <div class="countdown-overlay font-silkscreen"></div>
             <div class="controls-hint">

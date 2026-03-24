@@ -176,20 +176,61 @@ window.saveCurrentScore = function() {
 document.addEventListener('DOMContentLoaded', () => {
     const allAudio = document.querySelectorAll('audio');
     const muteButton = document.getElementById('mute-button');
+    const crtButton = document.getElementById('crt-button');
+    const crtOverlay = document.getElementById('crt-overlay');
     
+    // Zvuk
     const savedMuteState = localStorage.getItem('isMuted');
     if (savedMuteState === 'true') { 
         window.isMuted = true; 
         allAudio.forEach(audio => audio.muted = true); 
         muteButton.textContent = '🔇'; 
     }
-    
     muteButton.addEventListener('click', () => {
         window.isMuted = !window.isMuted;
         allAudio.forEach(audio => audio.muted = window.isMuted);
         muteButton.textContent = window.isMuted ? '🔇' : '🔊';
         localStorage.setItem('isMuted', window.isMuted);
     });
+
+    // CRT Efekt
+    let isCrtOn = localStorage.getItem('isCrtOn') === 'true';
+    const toggleCrt = () => {
+        if(isCrtOn) {
+            document.body.classList.add('crt-active');
+            crtOverlay.classList.add('crt-on');
+        } else {
+            document.body.classList.remove('crt-active');
+            crtOverlay.classList.remove('crt-on');
+        }
+    };
+    toggleCrt(); // Init state
+
+    if(crtButton) {
+        crtButton.addEventListener('click', () => {
+            isCrtOn = !isCrtOn;
+            localStorage.setItem('isCrtOn', isCrtOn);
+            toggleCrt();
+        });
+    }
+
+    // Detekce dotyku (lepší než medi queries pro zobrazení tlačítek)
+    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+        document.body.classList.add('has-touch');
+    }
+
+    // PWA Service Worker Registration
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(registration => {
+                    console.log('SW registered: ', registration);
+                })
+                .catch(registrationError => {
+                    console.log('SW registration failed: ', registrationError);
+                });
+        });
+    }
 
     window.addEventListener('keydown', (e) => { 
         if (window.activeGame && [' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) e.preventDefault();
@@ -201,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.querySelectorAll('.game-window').forEach(win => {
         win.addEventListener('click', (e) => {
-            if (e.target.closest('.delete-score-btn') || e.target.closest('.close-btn')) return;
+            if (e.target.closest('.delete-score-btn') || e.target.closest('.close-btn') || e.target.closest('.start-game-btn')) return;
 
             const gameName = win.dataset.game;
             const game = window.gameInstances[gameName];
@@ -218,16 +259,43 @@ document.addEventListener('DOMContentLoaded', () => {
             
             document.body.style.overflow = 'hidden';
             window.activeGame = gameName;
-            win.classList.add('active');
             
-            // --- DŮLEŽITÉ: Výchozí velikost ---
+            // Animace nastavení pozice přes transform
+            const rect = win.getBoundingClientRect();
+            // Nastavíme center point originálu před přidáním 'active'
+            const targetX = window.innerWidth / 2 - (rect.left + rect.width / 2);
+            const targetY = window.innerHeight / 2 - (rect.top + rect.height / 2);
+            
+            win.classList.add('active');
+            // Můžeme udělat transition z origin, ale pro tuhle fází stačí 'active' přidání a CSS transition postará o zbytek.
+            
             game.canvas.width = window.innerWidth;
             game.canvas.height = window.getPlayableHeight();
             
             game.reset();
-            game.draw();
+            game.draw(); // Canvas je zatím skrytý kvůli CSS (bude odkryt po kliknutí v modalu)
             
-            window.playCountdown(game, () => game.start());
+            // Zobrazíme How To Play Modál
+            const modal = win.querySelector('.how-to-play-modal');
+            const startBtn = win.querySelector('.start-game-btn');
+            if (modal && startBtn) {
+                // Skryjeme canvas dokud neodkliknem modal
+                game.canvas.style.display = 'none';
+                modal.classList.add('active-modal');
+                modal.classList.remove('hidden');
+                
+                // Zajistíme jeden navázaný event na tlačítko Start
+                startBtn.onclick = (event) => {
+                    event.stopPropagation();
+                    modal.classList.remove('active-modal');
+                    modal.classList.add('hidden');
+                    game.canvas.style.display = 'block'; // Objeví se canvas
+                    window.playCountdown(game, () => game.start());
+                };
+            } else {
+                // Záloha, pokud by modal chyběl
+                window.playCountdown(game, () => game.start());
+            }
         });
         
         const closeBtn = win.querySelector('.close-btn');
@@ -238,6 +306,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (window.gameInstances[gameName]) {
                     window.gameInstances[gameName].stop();
                     win.classList.remove('active');
+                    if (win.querySelector('.how-to-play-modal')) {
+                        win.querySelector('.how-to-play-modal').classList.remove('active-modal');
+                        win.querySelector('.how-to-play-modal').classList.add('hidden');
+                    }
+                    if (window.gameInstances[gameName].canvas) {
+                        window.gameInstances[gameName].canvas.style.display = ''; // Odstraní block/none inline styl
+                    }
                     window.activeGame = null;
                     document.body.style.overflow = 'auto';
                 }
@@ -250,8 +325,17 @@ document.addEventListener('DOMContentLoaded', () => {
     for (const [btnId, key] of Object.entries(touchControls)) {
         const button = document.getElementById(btnId);
         if (button) {
-            button.addEventListener('touchstart', (e) => { e.preventDefault(); simulateKeyEvent('keydown', key); button.style.transform='scale(0.9)'; }, { passive: false });
-            button.addEventListener('touchend', (e) => { e.preventDefault(); simulateKeyEvent('keyup', key); button.style.transform='scale(1)'; }, { passive: false });
+            button.addEventListener('touchstart', (e) => { 
+                e.preventDefault(); 
+                simulateKeyEvent('keydown', key); 
+                button.style.transform='scale(0.9)'; 
+                if(navigator.vibrate) navigator.vibrate(20); // Haptická odezva!
+            }, { passive: false });
+            button.addEventListener('touchend', (e) => { 
+                e.preventDefault(); 
+                simulateKeyEvent('keyup', key); 
+                button.style.transform='scale(1)'; 
+            }, { passive: false });
         }
     }
 

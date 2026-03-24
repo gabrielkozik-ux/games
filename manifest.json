@@ -1,0 +1,17 @@
+{
+  "name": "Retro Herní Arkáda",
+  "short_name": "Retro Arcade",
+  "description": "Zahrajte si klasické retro hry jako Snake, Pong, Tetris a další přímo ve vašem prohlížeči. Arkáda plná nostalgické zábavy.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#facc15",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "bmc_qr.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    }
+  ]
+}
